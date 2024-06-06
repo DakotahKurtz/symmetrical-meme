@@ -1,0 +1,8 @@
+The inspiration for this article (and much of my background knowledge on Fourier Series) must be credited to the amazing Grant Sanderson, creator of the YouTube channel "3blue1Brown" and his video "But what is a Fourier series? From heat flow to drawing with circles" - uploaded June 2019.
+
+Fourier Series -  is an expansion of a periodic function into a sum of trigonometric functions.
+
+Fourier Transform - Fourier transform (FT) is an integral transform that takes a function as input and outputs another function that describes the extent to which various frequencies are present in the original function. The output of the transform is a complex-valued function of frequency.
+
+The Fourier series is used to represent a periodic function by a discrete sum of complex exponentials, while the Fourier transform is then used to represent a general, nonperiodic function by a continuous superposition or integral of complex exponentials. The Fourier transform can be viewed as the limit of the Fourier series of a function with the period approaches to infinity, so the limits of integration change from one period to (−∞,∞)
+ 
