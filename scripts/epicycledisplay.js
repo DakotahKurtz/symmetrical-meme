@@ -5,6 +5,7 @@ class Camera {
     height;
     tx;
     ty;
+    tickRate;
 
     constructor(width, height) {
         this.width = width;
@@ -13,6 +14,7 @@ class Camera {
         this.focusedOn = 0;
         this.tx = 0;
         this.ty = 0;
+        this.tickRate = defaultTick
     }
 
     reset() {
@@ -20,6 +22,8 @@ class Camera {
         this.focusedOn = 0;
         this.tx = 0;
         this.ty = 0;
+        this.tickRate = defaultTick
+
     }
 
     center(x, y, dim) {
@@ -28,6 +32,15 @@ class Camera {
         // console.log("-");
         this.tx = (this.width / 2) - (x * this.zoom);
         this.ty = (this.height / 2) - (y * this.zoom);
+    }
+
+    zoomTo(inUse) {
+        this.focusedOn = inUse;
+        console.log("Focus on set to: " + this.focusedOn + " | out of " + numVectInUse);
+        if (inUse == 0) {
+            this.reset();
+        }
+        this.updateZoom();
     }
 
 
@@ -51,7 +64,7 @@ class Camera {
         this.focusedOn--;
 
         if (this.focusedOn == 0) {
-            this.init();
+            this.reset();
             return true;
         }
 
@@ -69,14 +82,21 @@ class Camera {
             this.zoom = previousZoom;
             return;
         }
-        let tRate = tickRate * (this.zoom / previousZoom);
+
+        if (this.focusedOn == 0) {
+            this.tickRate = defaultTick;
+            clearInterval(timerId);
+            timerId = setInterval(animation, this.tickRate);
+            return;
+        }
+        let tRate = this.tickRate * (this.zoom / previousZoom);
 
         if (this.#withinRateRange(tRate)) {
-            tickRate = tRate;
+            this.tickRate = tRate;
             clearInterval(timerId);
-            timerId = setInterval(drawEpicycles, tickRate);
+            timerId = setInterval(animation, this.tickRate);
         }
-        console.log("tickRate: " + tickRate);
+        console.log("tickRate: " + this.tickRate + " | tRate: " + tRate);
     }
 
     #withinRateRange(rate) {
@@ -90,8 +110,6 @@ const canvas = document.getElementById("canvas-interactive");
 var positionInfo = canvas.getBoundingClientRect();
 var height = positionInfo.height;
 var width = positionInfo.width;
-var camera = new Camera(width, height);
-
 var vectors;
 var minX, minY, maxX, maxY, minC, maxRange;
     drawnFlag = false,
@@ -109,19 +127,24 @@ var circleCenters = [];
 
 currT = 0;
 const defaultNumOfVectors = 5;
+const defaultTick = 30;
 let numVectInUse = defaultNumOfVectors;
 approximation = [];
 breathing_room = width * .3;
 drawMode = true;
 centered = false;
 let timerId;
-const defaultTick = 10;
-let tickRate = defaultTick;
+
 let totalAvailableVectors;
 let transformation;
+let circleShownToggle = true;
+let approxOnlyToggle = false;
+let tInc = .03;
+
+let temp = 0;
 
 
-
+var camera = new Camera(width, height);
 const ctx = canvas.getContext("2d");
 
 
@@ -142,135 +165,67 @@ swapButton = document.getElementById("btn_swap");
 swapButton.addEventListener("click", swapButtonListener);
 eraseButton = document.getElementById("btn_erase");
 eraseButton.addEventListener("click", eraseButtonListener);
-zoomInButton = document.getElementById("btn_zoomin");
-zoomInButton.addEventListener("click", zoomInButtonListener);
-zoomOutButton = document.getElementById("btn_zoomout");
-zoomOutButton.addEventListener("click", zoomOutButtonListener);
+focusSlider = document.getElementById("range_focus_selector");
+focusSlider.addEventListener("input", focusSliderListener);
 
 adjustNSlider = document.getElementById("range_adjust_n");
-adjustNSlider.addEventListener("input", () => {
-    console.log("Value: " + adjustNSlider.value);
-    numVectInUse = adjustNSlider.value;
-    vectors = transformation.getVectors(numVectInUse);
-});
+adjustNSlider.addEventListener("input", adjustNSliderListener);
+
+document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
+document.getElementById("just_approx_toggle").addEventListener('change', function(){approxOnlyToggle = this.checked});
+
 
 initDrawMode();
 
-
-
-// function adjustPage() {
-//     // let aside = document.getElementById("aside");
-//     // console.log("aside.offSetWidth: " + aside.offsetWidth);
-//     // if (aside.offsetWidth < 200) {
-//     //     aside.style.display = "none";
-//     // } else {
-//     //     aside.style.display = "block";
-//     // }
-// }
-
-function scaleCanvas() {
-    let controls_container = document.getElementById("epi-controls-container");
-    let epi_container = document.getElementById("epi-container");
-    let vp_width  = window.innerWidth || document.documentElement.clientWidth || 
-    document.body.clientWidth;
-    let vp_height = window.innerHeight|| document.documentElement.clientHeight|| 
-    document.body.clientHeight;
-    
-    console.log(vp_width, vp_height);
-
-    let control_height = controls_container.offsetHeight;
-
-
-    if ((vp_height + (controls_container.offsetHeight )) < window.innerWidth) {
-        w = h = (vp_height - controls_container.offsetHeight);
-        // console.log("dim: " + w + " | " + vp_height + " - " + controls_container.offsetHeight);
-        console.log("One");
-        epi_container.style.width = w + "px";
-        epi_container.style.height = vp_height + "px";
+function animation() {
+    if (approxOnlyToggle) {
+        drawApproximation();
     } else {
-        w = h = window.innerWidth - control_height;
-        epi_container.style.width = w + "px";
-        epi_container.style.height = h + control_height + "px";
-        console.log("two");
+        drawEpicycles();
     }
-    // console.log("epi w,h: " + epi_container.offsetWidth + ", " + epi_container.offsetHeight);
-    // canvas.width = width = camera.width = 900;
-    // container.offsetWidth = 200;
-    canvas.width = width = camera.width = w;
-    canvas.height = height = camera.height = h;
-    // console.log("canvas w, h: " + canvas.width + ", " + canvas.height);
-
-    breathing_room = width * .3;
-    // camera.updateZoom();
-    // console.log(circleCenters.length);
-    //     camera.center(circleCenters[camera.focusedOn-1][0] + (width / 2), (height / 2) - circleCenters[camera.focusedOn-1][1]);
-
-    // console.log("canvasW,H: " + canvas.width + ", " + canvas.height);
-    // console.log("W,H: " + width + ", " + height);
 }
 
-
-
-function zoomOutButtonListener() {
-    camera.zoomOut();
-    console.log("Zoom: " + camera.zoom + " | focusedOn: " + camera.focusedOn);
-    console.log("width: " + width + " , height: " + height);
+function focusSliderListener() {
+    camera.zoomTo(focusSlider.value);
 }
 
-function zoomInButtonListener() {
-    // scaleFactor += vectors[focusedOn].radius / vectors[focusedOn +1].radius;
-    camera.zoomIn();
-    console.log("Zoom: " + camera.zoom + " | focusedOn: " + camera.focusedOn);
-    console.log("width: " + width + " , height: " + height);
+function adjustNSliderListener() {
+    clearInterval(timerId);
+
+    console.log("# Vectors Value: " + adjustNSlider.value);
+    numVectInUse = adjustNSlider.value;
+    vectors = transformation.getVectors(numVectInUse);
+
+    if (focusSlider.value >= numVectInUse) {
+        focusSlider.value = (numVectInUse - 1);
+        camera.zoomTo(numVectInUse - 1);
+    }
+    focusSlider.max = (numVectInUse - 1);
+    timerId = setInterval(animation, camera.tickRate);
 
 }
+
 
 function eraseButtonListener() {
-    if (drawMode) {
         ctx.clearRect(0, 0, width, height);
         mouseInputs = [];
-    } else {
-        if (!centered) {
-            centered = true;
-            eraseButton.value = "Un-Center";
-        } else {
-            centered = false;
-            eraseButton.value = "Center";
-        }
-    }
-}
-
-function initDrawMode() {
-    drawMode = true;
-    mouseInputs = [];
-    swapButton.value = "Finished";
-    eraseButton.value = "Erase";
-    zoomInButton.style.display = "none";
-    zoomOutButton.style.display = "none";
-    adjustNSlider.style.display = "none";
-
-    ctx.clearRect(0, 0, width, height);
-    canvas.addEventListener("mousemove", draw_mouseMove);
-    canvas.addEventListener("mousedown", draw_mouseDown);
-    canvas.addEventListener("mouseup", draw_mouseUp);
+        document.getElementById("btn_swap").disabled = true;
 }
 
 function swapButtonListener() {
     if (drawMode) {
         drawMode = false;
-        approximation = [];
-        currT = 0;
-        swapButton.value = "Back";
-        eraseButton.value = centered ? "Un-Center" : "Center";
-        zoomInButton.style.display = "block";
-        zoomOutButton.style.display = "block";
-        adjustNSlider.style.display = "block";
-        swapToEpicycles();
-        timerId = setInterval(drawEpicycles, tickRate);
+
+
+        // focusSlider.style.display = "block";
+
+        // adjustNSlider.style.display = "block";
+        initDisplayMode();
+        timerId = setInterval(animation, camera.tickRate);
     } else {
         // window.cancelAnimationFrame(raf);
 
-        tickRate = defaultTick;
+        
         clearInterval(timerId);
 
         initDrawMode(); 
@@ -308,9 +263,36 @@ function coordstoDraw(coords) {
     return toDraw;
 }
 
-function swapToEpicycles() {
+function initDrawMode() {
+    drawMode = true;
+    mouseInputs = [];
+    swapButton.value = "Finished";
+    document.getElementById("erase_div").style.display="block";
+    
+    document.getElementById("focus_div").style.display = "none";
+    document.getElementById("adjust_n_div").style.display = "none";
+    document.getElementById("circle_toggle_div").style.display = "none";
+    document.getElementById("approx_toggle_div").style.display = "none";
+    document.getElementById("btn_swap").disabled = true;
+
+    ctx.clearRect(0, 0, width, height);
+    canvas.addEventListener("mousemove", draw_mouseMove);
+    canvas.addEventListener("mousedown", draw_mouseDown);
+    canvas.addEventListener("mouseup", draw_mouseUp);
+}
+
+function initDisplayMode() {
     ctx.clearRect(0, 0, width, height);
     camera.reset();
+
+    approximation = [];
+    currT = 0;
+    swapButton.value = "Back";
+    document.getElementById("erase_div").style.display="none";
+    document.getElementById("focus_div").style.display = "block";
+    document.getElementById("adjust_n_div").style.display = "block";
+    document.getElementById("circle_toggle_div").style.display = "block";
+    document.getElementById("approx_toggle_div").style.display = "block";
     
     canvas.removeEventListener("mousemove", draw_mouseMove);
     canvas.removeEventListener("mousedown", draw_mouseDown);
@@ -333,39 +315,53 @@ function swapToEpicycles() {
 
     minC = Math.min(minX, minY);
     maxRange = Math.max(maxX - minX, maxY - minY);
-    // console.log("min: " + minX + ", " + minY + " | max: " + maxX + ", " + maxY);
 
     transformation = new Transformation(scaledInputs);
     console.log("total available vectors = " + transformation.vectors.length);
     totalAvailableVectors = transformation.vectors.length;
     adjustNSlider.max = totalAvailableVectors;
-    numVectInUse = defaultNumOfVectors;
+    numVectInUse = Math.min(totalAvailableVectors, defaultNumOfVectors);
+    adjustNSlider.value = numVectInUse;
+    focusSlider.max = numVectInUse - 1;
+    focusSlider.value = 0;
     vectors = transformation.getVectors(numVectInUse);
-    // raf = window.requestAnimationFrame(drawEpicycles);
-
 }
 
+function drawApproximation() {
+    ctx.clearRect(0, 0, width, height);
+    let approx = [];
+    let endPoints = [];
+    let t = 0;
 
+    while (t <= (2*Math.PI + tInc)) {
+        endPoints = getVectorEndpoints(t);
+        approx.push([endPoints[endPoints.length - 1][0], endPoints[endPoints.length - 1][1]]);
+        t += tInc;
+    }
+
+    showGoal();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#aaffd3";
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(coordsToDrawX(approx[0][0]), coordsToDrawY(approx[0][1]));
+
+    for (let i = 1; i < approx.length; i++) {
+
+        ctx.lineTo(coordsToDrawX(approx[i][0]), coordsToDrawY(approx[i][1]));
+    }
+    ctx.stroke();
+
+    drawNumVectors();
+}
 
 function drawEpicycles() { 
 
     // console.log("drawEpicycles");
     ctx.clearRect(0, 0, width, height);
-    ctx.setLineDash([4, 2]);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#000000";
 
-
-    
-
-    ctx.beginPath();
-    ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
-    for (let i = 1; i < mouseInputs.length; i++) {
-        let x = coordsToDrawX(mouseInputs[i][0]);
-        let y = coordsToDrawY(mouseInputs[i][1]);
-        ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+    showGoal();
 
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#000000";
@@ -373,44 +369,37 @@ function drawEpicycles() {
 
 
     // calculate the centers of every circle
-    circleCenters = [];
+    let circleCenters = getVectorEndpoints(currT);
 
-    for (let i = 0; i < numVectInUse; i++) {
-        if (i == 0) {
-            let x = vectors[0].radius * Math.cos(currT * vectors[0].scaledIndex + vectors[0].offset);
-            let y = vectors[0].radius * Math.sin(currT * vectors[0].scaledIndex + vectors[0].offset);
-            circleCenters.push([x, y]);
-        } else {
-            
-            x = circleCenters[i - 1][0] + vectors[i].radius * Math.cos(currT * vectors[i].scaledIndex + vectors[i].offset);
-            y = circleCenters[i - 1][1] + vectors[i].radius * Math.sin(currT * vectors[i].scaledIndex + vectors[i].offset);
-            if (i == camera.focusedOn) {
-                camera.center(circleCenters[i-1][0] + (width / 2), (height / 2) - circleCenters[i-1][1]);
-            }
-            circleCenters.push([x, y]);
-        }
-    } 
 
-    ctx.beginPath();
-    ctx.arc(coordsToDrawX(0), coordsToDrawY(0), scale(vectors[0].radius), 0, 2*Math.PI, true);
-    ctx.stroke();
 
-    // draw each circle
-    for (let i = 1; i < numVectInUse; i++) {
-        if (i == camera.focusedOn) {
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "#ffabaa";
-        }
-        else if (i < camera.focusedOn && camera.focusedOn != 0) {
-            ctx.strokeStyle = "rgb(70 70 70 / 20%)";
-            ctx.lineWidth = 1;
-        } else {
-            ctx.strokeStyle = "rgb(70 70 70)";
-            ctx.lineWidth = 1;
-        }
+
+    if (camera.focusedOn != 0) {
+        camera.center(circleCenters[camera.focusedOn-1][0] + (width / 2), (height / 2) - circleCenters[camera.focusedOn-1][1]);
+    }
+
+    if (circleShownToggle) {
         ctx.beginPath();
-        ctx.arc(coordsToDrawX(circleCenters[i-1][0]), coordsToDrawY(circleCenters[i-1][1]), scale(vectors[i].radius), 0, 2*Math.PI, true);
+        ctx.arc(coordsToDrawX(0), coordsToDrawY(0), scale(vectors[0].radius), 0, 2*Math.PI, true);
         ctx.stroke();
+
+        // draw each circle
+        for (let i = 1; i < numVectInUse; i++) {
+            if (i == camera.focusedOn) {
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#ffabaa";
+            }
+            else if (i < camera.focusedOn && camera.focusedOn != 0) {
+                ctx.strokeStyle = "rgb(70 70 70 / 20%)";
+                ctx.lineWidth = 1;
+            } else {
+                ctx.strokeStyle = "rgb(70 70 70)";
+                ctx.lineWidth = 1;
+            }
+            ctx.beginPath();
+            ctx.arc(coordsToDrawX(circleCenters[i-1][0]), coordsToDrawY(circleCenters[i-1][1]), scale(vectors[i].radius), 0, 2*Math.PI, true);
+            ctx.stroke();
+        }
     }
 
     // draw radial lines for each circle
@@ -446,16 +435,35 @@ function drawEpicycles() {
     ctx.arc(coordsToDrawX(circleCenters[circleCenters.length - 1][0]), coordsToDrawY(circleCenters[circleCenters.length - 1][1]), 5, 0, 2*Math.PI, true);
     ctx.fill();
 
-    ctx.font = "48px serif";
-    ctx.strokeText(numVectInUse, (width * .8), (height * .95));
+    drawNumVectors();
 
-    currT += .01;
+    currT += tInc;
     // await new Promise(r => setTimeout(r, 200));
 
 
     // raf = window.requestAnimationFrame(drawEpicycles);
     
     
+}
+
+function drawNumVectors() {
+    ctx.font = "48px serif";
+    ctx.strokeText(numVectInUse, (width * .8), (height * .95));
+}
+
+function showGoal() {
+
+    ctx.setLineDash([4, 2]);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
+    for (let i = 1; i < mouseInputs.length; i++) {
+        let x = coordsToDrawX(mouseInputs[i][0]);
+        let y = coordsToDrawY(mouseInputs[i][1]);
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
 }
 
 function getCoords(currT) {
@@ -472,6 +480,25 @@ function getCoords(currT) {
     }
 
     return coords;
+}
+
+function getVectorEndpoints(time) {
+    let endpoints = [];
+
+    for (let i = 0; i < numVectInUse; i++) {
+        if (i == 0) {
+            let x = vectors[0].radius * Math.cos(time * vectors[0].scaledIndex + vectors[0].offset);
+            let y = vectors[0].radius * Math.sin(time * vectors[0].scaledIndex + vectors[0].offset);
+            endpoints.push([x, y]);
+        } else {
+            
+            x = endpoints[i - 1][0] + vectors[i].radius * Math.cos(time * vectors[i].scaledIndex + vectors[i].offset);
+            y = endpoints[i - 1][1] + vectors[i].radius * Math.sin(time * vectors[i].scaledIndex + vectors[i].offset);
+
+            endpoints.push([x, y]);
+        }
+    } 
+    return endpoints;
 }
 
 function scale(radius) {
@@ -507,12 +534,13 @@ function draw_mouseDown(e) {
     if (!drawnFlag) {
         ctx.clearRect(0, 0, width, height);
         mouseInputs = [];
+        document.getElementById("btn_swap").disabled = false;
+
     }
     prevX = currX;
     prevY = currY;
     currX = getMousePos(canvas, e).x;
     currY = getMousePos(canvas, e).y;
-    console.log("Mouse x,y: " + currX + ", " + currY);
     drawnFlag = true;
 
         ctx.beginPath();
@@ -528,8 +556,7 @@ function draw_mouseUp() {
 
     let d = Math.sqrt((currX - mouseInputs[0][0]) * (currX - mouseInputs[0][0]) + 
         (currY - mouseInputs[0][1])*(currY - mouseInputs[0][1]));
-    console.log("CurrX,Y: " + currX + ", " + currY + " | firstX,Y: " + mouseInputs[0][0] + ", " + 
-        mouseInputs[0][1] + " | distance: " + d);
+
 
         console.log("BeforeLength: " + mouseInputs.length);
     if (d < threshold) { // assume trying to draw a closed shape
@@ -578,4 +605,42 @@ function getMousePos(canvas, evt) {
         x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
         y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
+}
+
+function scaleCanvas() {
+    let controls_container = document.getElementById("epi-controls-container");
+    let epi_container = document.getElementById("epi-container");
+    let vp_width  = window.innerWidth || document.documentElement.clientWidth || 
+    document.body.clientWidth;
+    let vp_height = window.innerHeight|| document.documentElement.clientHeight|| 
+    document.body.clientHeight;
+    
+    console.log(vp_width, vp_height);
+
+    let control_height = controls_container.offsetHeight;
+
+
+    if ((vp_height + (controls_container.offsetHeight )) < window.innerWidth) {
+        w = h = (vp_height - controls_container.offsetHeight);
+        epi_container.style.width = w + "px";
+        epi_container.style.height = vp_height + "px";
+    } else {
+        w = h = window.innerWidth - control_height;
+        epi_container.style.width = w + "px";
+        epi_container.style.height = h + control_height + "px";
+    }
+    // console.log("epi w,h: " + epi_container.offsetWidth + ", " + epi_container.offsetHeight);
+    // canvas.width = width = camera.width = 900;
+    // container.offsetWidth = 200;
+    canvas.width = width = camera.width = w;
+    canvas.height = height = camera.height = h;
+    // console.log("canvas w, h: " + canvas.width + ", " + canvas.height);
+
+    breathing_room = width * .3;
+    // camera.updateZoom();
+    // console.log(circleCenters.length);
+    //     camera.center(circleCenters[camera.focusedOn-1][0] + (width / 2), (height / 2) - circleCenters[camera.focusedOn-1][1]);
+
+    // console.log("canvasW,H: " + canvas.width + ", " + canvas.height);
+    // console.log("W,H: " + width + ", " + height);
 }
