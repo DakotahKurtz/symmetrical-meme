@@ -6,6 +6,8 @@ class Camera {
     tx;
     ty;
     tickRate;
+    saveState;
+    saved;
 
     constructor(width, height) {
         this.width = width;
@@ -14,7 +16,32 @@ class Camera {
         this.focusedOn = 0;
         this.tx = 0;
         this.ty = 0;
-        this.tickRate = defaultTick
+        this.tickRate = defaultTick;
+        this.saved = false;
+        
+    }
+
+    save() {
+        this.saved = true;
+        this.saveState = new Camera(this.width, this.height);
+        this.saveState.zoom = this.zoom;
+        this.saveState.focusedOn = this.focusedOn;
+        this.saveState.tx = this.tx;
+        this.saveState.ty = this.ty;
+        this.saveState.tickRate = this.tickRate;
+    }
+
+    load() {
+        if (!this.saved) {
+            return;
+        }
+        this.width = this.saveState.width;
+        this.height = this.saveState.height;
+        this.zoom = this.saveState.zoom;
+        this.focusedOn = this.saveState.focusedOn;
+        this.tx = this.saveState.tx;
+        this.ty = this.saveState.ty;
+        this.tickRate = this.saveState.tickRate;
     }
 
     reset() {
@@ -23,23 +50,20 @@ class Camera {
         this.tx = 0;
         this.ty = 0;
         this.tickRate = defaultTick
-
     }
 
     center(x, y, dim) {
-        // console.log("tx,ty: " + this.tx + ", " + this.ty);
-        // console.log("Recalculating with: x,y,dim: " + x + ", " + y + " | ");
-        // console.log("-");
+
         this.tx = (this.width / 2) - (x * this.zoom);
         this.ty = (this.height / 2) - (y * this.zoom);
     }
 
     zoomTo(inUse) {
         this.focusedOn = inUse;
-        console.log("Focus on set to: " + this.focusedOn + " | out of " + numVectInUse);
         if (inUse == 0) {
             this.reset();
         }
+
         this.updateZoom();
     }
 
@@ -85,22 +109,22 @@ class Camera {
 
         if (this.focusedOn == 0) {
             this.tickRate = defaultTick;
-            clearInterval(timerId);
-            timerId = setInterval(animation, this.tickRate);
+            stopAnimationWrapper(timerId);
+            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
             return;
         }
         let tRate = this.tickRate * (this.zoom / previousZoom);
 
         if (this.#withinRateRange(tRate)) {
             this.tickRate = tRate;
-            clearInterval(timerId);
-            timerId = setInterval(animation, this.tickRate);
+            stopAnimationWrapper(timerId);
+            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
         }
-        console.log("tickRate: " + this.tickRate + " | tRate: " + tRate);
+        // console.log("tickRate: " + this.tickRate + " | tRate: " + tRate);
     }
 
     #withinRateRange(rate) {
-        return (rate >= defaultTick) && (rate <= 100);
+        return (rate >= defaultTick) && (rate <= defaultTick*5);
     }
     
 }
@@ -119,7 +143,7 @@ var minX, minY, maxX, maxY, minC, maxRange;
     currY = 0,
     dot_flag = false;
 
-
+let running = false;
 var drawLineWidth = 2;
 
 var mouseInputs = [];
@@ -140,9 +164,6 @@ let transformation;
 let circleShownToggle = true;
 let approxOnlyToggle = false;
 let tInc = .03;
-
-let temp = 0;
-
 
 var camera = new Camera(width, height);
 const ctx = canvas.getContext("2d");
@@ -172,36 +193,99 @@ adjustNSlider = document.getElementById("range_adjust_n");
 adjustNSlider.addEventListener("input", adjustNSliderListener);
 
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
-document.getElementById("just_approx_toggle").addEventListener('change', function(){approxOnlyToggle = this.checked});
+document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 
 
 initDrawMode();
 
-function animation() {
+// function animation() {
+//     if (approxOnlyToggle) {
+//         drawApproximation();
+//     } else {
+//         drawEpicycles();
+//     }
+// }
+
+function approxOnlyToggleListener() {
+    approxOnlyToggle = this.checked;
+
     if (approxOnlyToggle) {
+        stopAnimationWrapper(timerId);
+        camera.save();
+        camera.reset();
+        document.getElementById("focus_div").style.display = "none";
+        document.getElementById("circle_toggle_div").style.display = "none";
         drawApproximation();
     } else {
-        drawEpicycles();
+        stopAnimationWrapper(timerId);
+
+        document.getElementById("focus_div").style.display = "block";
+        document.getElementById("circle_toggle_div").style.display = "block";
+        camera.load();
+
+        console.log("# Vectors Value: " + adjustNSlider.value);
+        numVectInUse = adjustNSlider.value;
+        vectors = transformation.getVectors(numVectInUse);
+
+        if (focusSlider.value >= numVectInUse) {
+            focusSlider.value = (numVectInUse - 1);
+            camera.zoomTo(numVectInUse - 1);
+        }
+        focusSlider.max = (numVectInUse - 1);
+        timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
     }
 }
 
 function focusSliderListener() {
+    // clearInterval(timerId);
+    // camera.zoomTo(focusSlider.value);
+    // timerId = setInterval(drawEpicycles, camera.tickRate);
+
     camera.zoomTo(focusSlider.value);
 }
 
-function adjustNSliderListener() {
-    clearInterval(timerId);
-
-    console.log("# Vectors Value: " + adjustNSlider.value);
-    numVectInUse = adjustNSlider.value;
-    vectors = transformation.getVectors(numVectInUse);
-
-    if (focusSlider.value >= numVectInUse) {
-        focusSlider.value = (numVectInUse - 1);
-        camera.zoomTo(numVectInUse - 1);
+function startAnimationWrapper(fx, tRate) {
+    
+    if (!running) {
+        running = true;
+        t = setInterval(fx, tRate);
+        return t;
     }
-    focusSlider.max = (numVectInUse - 1);
-    timerId = setInterval(animation, camera.tickRate);
+    return timerId;
+}
+
+function stopAnimationWrapper(t) {
+    clearInterval(t);
+    running = false;
+}
+
+function adjustNSliderListener() {
+    if (approxOnlyToggle) {
+        numVectInUse = adjustNSlider.value;
+        vectors = transformation.getVectors(numVectInUse);
+        drawApproximation();
+    } else {
+
+        stopAnimationWrapper(timerId);
+
+        numVectInUse = adjustNSlider.value;
+        vectors = transformation.getVectors(numVectInUse);
+        console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
+
+
+        if (focusSlider.value >= numVectInUse) {
+            console.log("HIT | focusSlider: " + focusSlider.value);
+            focusSlider.value = (numVectInUse - 1);
+            console.log("HIT | focusSlider: " + focusSlider.value);
+
+            camera.zoomTo(numVectInUse - 1);
+
+            focusSlider.max = (numVectInUse - 1);
+
+        }
+        timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+    }
+
 
 }
 
@@ -221,12 +305,16 @@ function swapButtonListener() {
 
         // adjustNSlider.style.display = "block";
         initDisplayMode();
-        timerId = setInterval(animation, camera.tickRate);
+        if (approxOnlyToggle) {
+            drawApproximation();
+        } else {
+            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+        }
     } else {
         // window.cancelAnimationFrame(raf);
 
         
-        clearInterval(timerId);
+        stopAnimationWrapper(timerId);
 
         initDrawMode(); 
     }
@@ -238,12 +326,9 @@ function canvasToCoords(inputs) {
     for (let i = 0; i < inputs.length; i++) {
         x = inputs[i][0];
         y = inputs[i][1];
-        // console.log("Prescaled: " + x + ", " + y);
         x -= (width / 2);
         y = (height / 2) - y;
-        // x *= .1;
-        // y *= .1;
-        // console.log("Postscaled: " + x + ", " + y);
+
 
         scaled.push([x, y]);
     }
@@ -358,7 +443,6 @@ function drawApproximation() {
 
 function drawEpicycles() { 
 
-    // console.log("drawEpicycles");
     ctx.clearRect(0, 0, width, height);
 
     showGoal();
@@ -558,7 +642,6 @@ function draw_mouseUp() {
         (currY - mouseInputs[0][1])*(currY - mouseInputs[0][1]));
 
 
-        console.log("BeforeLength: " + mouseInputs.length);
     if (d < threshold) { // assume trying to draw a closed shape
         x = mouseInputs[0][0];
         y = mouseInputs[0][1];
@@ -575,10 +658,7 @@ function draw_mouseUp() {
         }
         mouseInputs = mouseInputs.concat(rev);
     }
-    console.log("AfterLength: " + mouseInputs.length);
-    for (let i = 0; i < mouseInputs.length; i++) {
-        console.log(i + " | x,y: " + mouseInputs[i][0] + ", " + mouseInputs[i][1]);
-    }
+
 
     drawnFlag = false;
 }
@@ -629,18 +709,10 @@ function scaleCanvas() {
         epi_container.style.width = w + "px";
         epi_container.style.height = h + control_height + "px";
     }
-    // console.log("epi w,h: " + epi_container.offsetWidth + ", " + epi_container.offsetHeight);
-    // canvas.width = width = camera.width = 900;
-    // container.offsetWidth = 200;
+
     canvas.width = width = camera.width = w;
     canvas.height = height = camera.height = h;
-    // console.log("canvas w, h: " + canvas.width + ", " + canvas.height);
 
     breathing_room = width * .3;
-    // camera.updateZoom();
-    // console.log(circleCenters.length);
-    //     camera.center(circleCenters[camera.focusedOn-1][0] + (width / 2), (height / 2) - circleCenters[camera.focusedOn-1][1]);
 
-    // console.log("canvasW,H: " + canvas.width + ", " + canvas.height);
-    // console.log("W,H: " + width + ", " + height);
 }
