@@ -50,27 +50,49 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
                     </canvas>
                 </div>
                 <div class="controls-container" id = "epi-controls-container">
-                    <div class="control">
-                        <input type="button" value="Finished" id="btn_swap">
+                    <div class="control-column">
+                        <div class="control">
+                            <input type="button" value="Finished" id="btn_swap">
+                        </div>
+                        <div class="control" id="erase_div">
+                            <input type = "button" value = "Erase" id="btn_erase">
+                        </div>
+                </div>
+                    <div class="control-column" id="display_slider_div">
+                        <div class="control" id="focus_div">
+                            <label for="focus">
+                            Focus On<br>
+                            <input type = "range" class = "slider" id="range_focus_selector" name="focus" value = "0" step = "1">
+                            </label>
+                        </div>
+
+                        <div class = "control" id="adjust_n_div">
+                            <label for="n_adjuster">
+                                Number of Circles<br>
+                            <input type="range" class = "slider" id="range_adjust_n" name="n_adjuster" min="2" max="300" value = "5" step = "1">
+                            </label>
+                        </div>
+
                     </div>
-                    <div class="control" id="erase_div">
-                        <input type = "button" value = "Erase" id="btn_erase">
-                    </div>
-                    <div class="control" id="focus_div">
-                        <input type = "range" class = "slider" id="range_focus_selector" name="focus" value = "0" step = "1">
-                        <label for="focus">Focus On</label>
-                    </div>
-                    <div class = "control" id="adjust_n_div">
-                        <input type="range" class = "slider" id="range_adjust_n" name="n_adjuster" min="2" max="300" value = "5" step = "1">
-                        <label for="n_adjuster">Number of Circles</label>
-                    </div>
-                    <div class = "control" id="circle_toggle_div">
-                        <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" name="show_circles_toggle" checked>
-                        <label for="show_circles_toggle">Show Circles</label>
-                    </div>
-                    <div class="control" id="approx_toggle_div">
-                        <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle" name="only_approx">
-                        <label for="only_approx">Approximation Only</label>
+                    <div class="control-column" id="display_toggle_div">
+                        <div class = "control" id="circle_toggle_div">
+                            <label for="show_circles_toggle">
+                                Show Circles
+                            <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" name="show_circles_toggle" checked>
+                            </label>
+                        </div>
+                        <div class="control" id="approx_toggle_div">
+                            <label for="only_approx">
+                                Approximation Only
+                            <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle" name="only_approx">
+                            </label>
+                        </div>
+                        <div class="control" id="goal_toggle_div">
+                            <label for="show_goal">
+                                Show Goal 
+                                <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" name="show_goal" checked>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -35,8 +35,9 @@ main {
 }
 
 .display-container {
-    flex-direction: column;
+  display: block;
     border: 6px solid rgb(211, 32, 32);
+    padding-bottom: 10px;
 }
 
 #canvas-interactive {
@@ -53,8 +54,8 @@ main {
   }
 
 .controls-container {
-    /* height: 140px; */
-    padding: 4px;
+    /* height: 50px; */
+    padding: 0px;
     width: 90%;
     padding-left: 0;
     padding-right: 0;
@@ -62,32 +63,31 @@ main {
     margin-right: auto;
     /* background: plum; */
     /* border: 4px solid indigo; */
+    border: 2px solid rgb(13, 197, 238);
+
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center; 
+    justify-content: space-evenly; 
     gap: 2px;
   }
-  
-  /* this selector selects all divs inside of .flex-container */
-  .controls-container div {
-    /* width: 60px;
-    height: 60px; */
-    /* flex: 1 1 0%; */
-    display: flex;
-    padding: 4px;
-    /* justify-content: center; */
-    /* border: 4px solid darkslategray;
-    background: skyblue; */
+
+  .control-column {
+    flex-direction: column;
+    padding: auto;
+    justify-content: space-evenly;
+    border: 2px solid rgb(238, 13, 13);
+
   }
 
-  .control input {
+  .control {
     /* display: block; */
-    /* margin: 10px 0;
-    padding: 10px; */
+    /* margin: 10px 0;*/
+    padding: 4px; 
     /* width: 90%; */
     /* flex: 1 1 0; */
-    background: rgb(102, 178, 208);
+        /* border: 1px solid rgb(13, 238, 238); */
+
   }
 
   .article-p {

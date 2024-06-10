@@ -120,7 +120,6 @@ class Camera {
             stopAnimationWrapper(timerId);
             timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
         }
-        // console.log("tickRate: " + this.tickRate + " | tRate: " + tRate);
     }
 
     #withinRateRange(rate) {
@@ -162,6 +161,7 @@ let timerId;
 let totalAvailableVectors;
 let transformation;
 let circleShownToggle = true;
+let goalShownToggle = true;
 let approxOnlyToggle = false;
 let tInc = .03;
 
@@ -173,8 +173,9 @@ const ctx = canvas.getContext("2d");
 let raf;
 
 window.addEventListener("load", () => {
-    scaleCanvas();
+    console.log("Loaded: ");
     initDrawMode();
+    scaleCanvas();
 
 });
 
@@ -190,13 +191,15 @@ eraseButton = document.getElementById("btn_erase");
 eraseButton.addEventListener("click", eraseButtonListener);
 focusSlider = document.getElementById("range_focus_selector");
 focusSlider.addEventListener("input", focusSliderListener);
-
 adjustNSlider = document.getElementById("range_adjust_n");
 adjustNSlider.addEventListener("input", adjustNSliderListener);
 
+
+document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 
+// scaleCanvas();
 
 
 // function animation() {
@@ -207,6 +210,14 @@ document.getElementById("just_approx_toggle").addEventListener('change', approxO
 //     }
 // }
 
+function showGoalToggleListener() {
+    goalShownToggle = this.checked;
+
+    if (approxOnlyToggle) {
+        drawApproximation();
+    }
+}
+
 function approxOnlyToggleListener() {
     approxOnlyToggle = this.checked;
 
@@ -214,14 +225,16 @@ function approxOnlyToggleListener() {
         stopAnimationWrapper(timerId);
         camera.save();
         camera.reset();
-        document.getElementById("focus_div").style.display = "none";
-        document.getElementById("circle_toggle_div").style.display = "none";
+        // document.getElementById("focus_div").style.display = "none";
+        // document.getElementById("circle_toggle_div").style.display = "none";
+        document.getElementById("range_focus_selector").disabled = true;
         drawApproximation();
     } else {
         stopAnimationWrapper(timerId);
 
-        document.getElementById("focus_div").style.display = "block";
-        document.getElementById("circle_toggle_div").style.display = "block";
+        // document.getElementById("focus_div").style.display = "block";
+        // document.getElementById("circle_toggle_div").style.display = "block";
+        document.getElementById("range_focus_selector").disabled = false;
         camera.load();
 
         console.log("# Vectors Value: " + adjustNSlider.value);
@@ -275,9 +288,7 @@ function adjustNSliderListener() {
 
 
         if (focusSlider.value >= numVectInUse) {
-            console.log("HIT | focusSlider: " + focusSlider.value);
             focusSlider.value = (numVectInUse - 1);
-            console.log("HIT | focusSlider: " + focusSlider.value);
 
             camera.zoomTo(numVectInUse - 1);
 
@@ -360,10 +371,6 @@ function drawDrawHere() {
     ctx.fillStyle = "rgb(130 151 184 / 50%)";
     ctx.fillText(text, x, y);
 
-    // ctx.font = "48px serif";
-    // ctx.fillText("Hello world", 200, 200);
-
-    console.log("drawDrawHere() | w, y: " + w + ", " + y);
 }
 
 function initDrawMode() {
@@ -372,11 +379,18 @@ function initDrawMode() {
     swapButton.value = "Finished";
     document.getElementById("erase_div").style.display="block";
     
-    document.getElementById("focus_div").style.display = "none";
-    document.getElementById("adjust_n_div").style.display = "none";
-    document.getElementById("circle_toggle_div").style.display = "none";
-    document.getElementById("approx_toggle_div").style.display = "none";
+    // document.getElementById("focus_div").style.display = "none";
+    // document.getElementById("adjust_n_div").style.display = "none";
+    // document.getElementById("circle_toggle_div").style.display = "none";
+    // document.getElementById("approx_toggle_div").style.display = "none";
+
+    document.getElementById("display_slider_div").style.display="none";
+    document.getElementById("display_toggle_div").style.display = "none";
+
+
     document.getElementById("btn_swap").disabled = true;
+
+    scaleCanvas();
 
     ctx.clearRect(0, 0, width, height);
     drawDrawHere();
@@ -393,18 +407,22 @@ function initDisplayMode() {
     currT = 0;
     swapButton.value = "Back";
     document.getElementById("erase_div").style.display="none";
-    document.getElementById("focus_div").style.display = "block";
-    document.getElementById("adjust_n_div").style.display = "block";
-    document.getElementById("circle_toggle_div").style.display = "block";
-    document.getElementById("approx_toggle_div").style.display = "block";
+    // document.getElementById("focus_div").style.display = "block";
+    // document.getElementById("adjust_n_div").style.display = "block";
+    // document.getElementById("circle_toggle_div").style.display = "block";
+    // document.getElementById("approx_toggle_div").style.display = "block";
+
+        document.getElementById("display_slider_div").style.display ="flex";
+    document.getElementById("display_toggle_div").style.display = "flex";
     
     canvas.removeEventListener("mousemove", draw_mouseMove);
     canvas.removeEventListener("mousedown", draw_mouseDown);
     canvas.removeEventListener("mouseup", draw_mouseUp);
+    scaleCanvas();
 
 
-
-    let scaledInputs = canvasToCoords(squares_arr);
+    let scaledInputs = canvasToCoords(mouseInputs);
+    mouseInputs = scaledInputs;
 
     minX = minY = Number.MAX_VALUE;
     maxX = maxY = Number.MIN_VALUE;
@@ -444,7 +462,7 @@ function drawApproximation() {
         t += tInc;
     }
 
-    showGoal();
+    drawGoal();
     ctx.lineWidth = 3;
     ctx.strokeStyle = "#aaffd3";
     ctx.setLineDash([]);
@@ -465,7 +483,7 @@ function drawEpicycles() {
 
     ctx.clearRect(0, 0, width, height);
 
-    showGoal();
+    drawGoal();
 
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#000000";
@@ -555,16 +573,18 @@ function drawNumVectors() {
     ctx.strokeText(numVectInUse, (width * .8), (height * .95));
 }
 
-function showGoal() {
-
+function drawGoal() {
+    if (!goalShownToggle) {
+        return;
+    }
     ctx.setLineDash([4, 2]);
     ctx.lineWidth = 1;
     ctx.strokeStyle = "#000000";
     ctx.beginPath();
-    ctx.moveTo(mouseInputs[0][0], (mouseInputs[0][1]));
+    ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
     for (let i = 1; i < mouseInputs.length; i++) {
-        let x = (mouseInputs[i][0]);
-        let y = (mouseInputs[i][1]);
+        let x = coordsToDrawX(mouseInputs[i][0]);
+        let y = coordsToDrawY(mouseInputs[i][1]);
         ctx.lineTo(x, y);
     }
     ctx.stroke();
@@ -717,9 +737,10 @@ function scaleCanvas() {
     let vp_height = window.innerHeight|| document.documentElement.clientHeight|| 
     document.body.clientHeight;
     
-    console.log(vp_width, vp_height);
 
     let control_height = controls_container.offsetHeight;
+
+    console.log("Viewport w,h: " + vp_width + ", " + vp_height + " controlHeight: " + control_height);
 
 
     if ((vp_height + (controls_container.offsetHeight )) < window.innerWidth) {
@@ -737,7 +758,7 @@ function scaleCanvas() {
 
     breathing_room = width * .3;
 
-    if (drawMode) {
+    if (drawMode) { // redraw users rendition
         if (mouseInputs.length == 0) {
             drawDrawHere();
         } else {
@@ -751,6 +772,8 @@ function scaleCanvas() {
             ctx.stroke();
             ctx.closePath();
         }
+    } else if (approxOnlyToggle) {
+        drawApproximation();
     }
 
 
