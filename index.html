@@ -43,21 +43,37 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
 
     Suspendisse leo tortor, feugiat ut ligula non, congue lobortis tortor. Morbi pellentesque erat metus, sed condimentum nisi consequat vel. Aliquam efficitur, mauris ornare fringilla dapibus, augue est fermentum eros, malesuada feugiat mauris dolor ut metus. Duis ac dui in magna viverra gravida. Maecenas convallis facilisis nulla, a imperdiet nisl dignissim non. Etiam viverra at lorem sed gravida. Nam semper condimentum maximus. Suspendisse suscipit posuere volutpat.
             </p>
-            <div class="display-container" id = "epi-container">
+            <div class="display-container" id = "epi_container">
                 <div class="canvas-container">
-                    <canvas id="canvas-interactive">
+                    <canvas id="canvas_interactive">
                         A graphic displaying rotating epicycles that generate an image.
                     </canvas>
                 </div>
-                <div class="controls-container" id = "epi-controls-container">
-                    <div class="control-column">
+                <div class="controls-container" id = "epi_controls_container">
+                    <div class="control-column" id = "draw_control_div">
                         <div class="control">
-                            <input type="button" value="Finished" id="btn_swap">
+                            <input type="button" value="Finished" id="btn_finished">
                         </div>
                         <div class="control" id="erase_div">
                             <input type = "button" value = "Erase" id="btn_erase">
                         </div>
-                </div>
+                    </div>
+                    <div class="control-column" id="draw_options_div">
+                        <div class="control">
+                            <input type="button" value="Sample Drawings" id="btn_samples">
+                        </div>
+                        <div class="control">
+                            <label for="closed_form">
+                                Closed Form
+                                <input type="checkbox" class="canvas_checkbox" id="closed_form_toggle" name="closed_form" checked>
+                            </label>
+                        </div>
+                    </div>
+                    <div class ="control-column" id="display_control_div">
+                        <div class="control">
+                            <input type="button" value="Back" id="btn_back">
+                        </div>
+                    </div>
                     <div class="control-column" id="display_slider_div">
                         <div class="control" id="focus_div">
                             <label for="focus">
@@ -109,6 +125,7 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
     </main>
 </div>
     <script src = "scripts/dft.js"></script>
+    <script src ="scripts/samples.js"></script>
     <script src = "scripts/epicycledisplay.js"></script>
 
 </body>

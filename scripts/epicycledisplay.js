@@ -1,3 +1,84 @@
+class Points {
+    #minX;
+    #minY;
+    #maxX;
+    #maxY;
+    #tx;
+    #ty;
+    #scale;
+    #arr;
+    
+    constructor(arr) {
+        
+        this.#scale = 1;
+        this.#tx = 0;
+        this.#ty = 0;
+
+        this.#minX = this.#minY = Number.MAX_VALUE;
+        this.#maxX = this.#maxY = Number.MIN_VALUE;
+    
+        for (let i = 0; i < arr.length; i++) {
+            this.#minX = Math.min(this.#minX, arr[i][0]);
+            this.#minY = Math.min(this.#minY, arr[i][1]);
+            this.#maxX = Math.max(this.#maxX, arr[i][0]);
+            this.#maxY = Math.max(this.#maxY, arr[i][1]);
+        }
+
+        console.log("In points minX,Y | maxX,Y: " + this.#minX + ", " + this.#minY + " | " + this.#maxX+ ", " + this.#maxY);
+        this.#arr = arr;
+    }
+
+    getMinX() {
+        return this.#minX;
+    }
+
+    getMaxX() {
+        return this.#maxX;
+    }
+
+    getMinY() {
+        return this.#minY;
+    }
+
+    getMaxY() {
+        return this.#maxY;
+    }
+
+    updateAvailableArea(dim, breathing_room) {
+        let range = Math.max(this.#maxX-this.#minX, this.#maxY - this.#minY);
+        console.log("In points RANGE: " + range);
+        this.#scale = (dim - 2*breathing_room) / range;
+        console.log("IN POINTS scale: " + this.#scale);
+        // let xRange = (this.#maxX - this.#minX) * this.#scale;
+        // let xScale = (dim - xRange) / 2;
+        // this.#tx = xScale - (this.#minX * this.#scale);
+
+        // let yRange = (this.#maxY - this.#minY) * this.#scale;
+        // let yScale = (dim - yRange) / 2;
+        // this.#ty = yScale - (this.#minY * this.#scale);
+        
+        this.#tx = (dim - ((this.#maxX - this.#minX) * this.#scale)) / 2 - (this.#minX * this.#scale);
+        this.#ty = (dim - ((this.#maxY - this.#minY) * this.#scale)) / 2 - (this.#minY * this.#scale);
+
+        console.log("tx, ty: " + this.#tx + ", " + this.#ty);
+    }
+
+    getLength() {
+        return this.#arr.length;
+    }
+
+    getPointX(i) {
+        let x = (this.#arr[i][0] * this.#scale + this.#tx);
+
+        return x;
+    }
+    getPointY(i) {
+        let y = (this.#arr[i][1] * this.#scale + this.#ty);
+        return y;
+    }
+    
+}
+
 class Camera {
     zoom;
     focusedOn;
@@ -128,7 +209,15 @@ class Camera {
     
 }
 
-const canvas = document.getElementById("canvas-interactive");
+var samples = [];
+samples.push(PI_arr, squares_arr, summation_arr);
+
+let points = [];
+for (let i = 0; i < samples.length; i++) {
+    points.push(new Points(samples[i]));
+}
+
+const canvas = document.getElementById("canvas_interactive");
 
 var positionInfo = canvas.getBoundingClientRect();
 var height = positionInfo.height;
@@ -152,7 +241,7 @@ currT = 0;
 const defaultNumOfVectors = 5;
 const defaultTick = 30;
 let numVectInUse = defaultNumOfVectors;
-approximation = [];
+let approximation = [];
 breathing_room = width * .3;
 drawMode = true;
 centered = false;
@@ -164,9 +253,14 @@ let circleShownToggle = true;
 let goalShownToggle = true;
 let approxOnlyToggle = false;
 let tInc = .03;
+let maxNumberOfVectors = 300;
+let clickBoxes = [];
+
+let sampleScreen = false;
 
 var camera = new Camera(width, height);
 const ctx = canvas.getContext("2d");
+let sampleChosen = -1;
 
 
 
@@ -185,30 +279,179 @@ window.addEventListener('resize', () => {
 });
 
 
-swapButton = document.getElementById("btn_swap");
-swapButton.addEventListener("click", swapButtonListener);
+finishedButton = document.getElementById("btn_finished");
+finishedButton.addEventListener("click", finishedButtonListener);
 eraseButton = document.getElementById("btn_erase");
 eraseButton.addEventListener("click", eraseButtonListener);
+
+backButton = document.getElementById("btn_back");
+backButton.addEventListener("click", backButtonListener);
 focusSlider = document.getElementById("range_focus_selector");
 focusSlider.addEventListener("input", focusSliderListener);
 adjustNSlider = document.getElementById("range_adjust_n");
 adjustNSlider.addEventListener("input", adjustNSliderListener);
+
+samplesButton = document.getElementById("btn_samples");
+samplesButton.addEventListener("click", samplesButtonListener);
+
 
 
 document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 
-// scaleCanvas();
+function samplesButtonListener() {
+    sampleScreen = true;
+    removeDrawMouseListeners();
+    initSampleScreen()
+
+}
 
 
-// function animation() {
-//     if (approxOnlyToggle) {
-//         drawApproximation();
-//     } else {
-//         drawEpicycles();
-//     }
-// }
+
+function initSampleScreen() {
+
+    canvas.removeEventListener("click", selectSample);
+    sampleChosen = -1;
+
+    let size = .9;
+    let padding = .08 * Math.min(width, height);
+    let br = .03 * Math.min(width, height);
+
+    let swidth = width * size;
+    let sheight = height * size;
+    let zx = (width - swidth) / 2;
+    let zy = (height - sheight) / 2;
+
+    ctx.clearRect(zx, zy, swidth, sheight);
+    // draw "border"
+    ctx.strokeStyle = "#FFA500";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(zx, zy, swidth, sheight);
+
+    let sampleDim = (Math.min(width, height) - padding * 4) / 2;
+    console.log("Sampledim: " + sampleDim);
+
+    //PI
+
+   clickBoxes = [];
+
+    let p;
+    let xt, yt;
+    let col, row, index;
+    col = row = index = 0;
+
+    while (index < points.length) {
+        p = points[index];
+        p.updateAvailableArea(sampleDim, br);
+        xt = zx + (padding * (col + 1)) + (sampleDim * col);
+        yt = zy + (padding * (row + 1)) + (sampleDim * row);
+
+        ctx.fillStyle = "black";
+        // ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(p.getPointX(0) + xt, p.getPointY(0) + yt);
+        for (let i = 0; i < p.getLength(); i++) {
+            ctx.beginPath();
+            ctx.arc(p.getPointX(i) + xt, p.getPointY(i) + yt, .5, 0, 2 * Math.PI, false);
+            ctx.fill();
+
+        }
+/*
+Clicked on Sample Screen: 404.5878260869565, 169.53326086956523
+epicycledisplay.js:384 click-boxes size: 3
+epicycledisplay.js:386 0 | 74.48999999999998, 74.48999999999998, 194.82
+epicycledisplay.js:386 1 | 315.15, 74.48999999999998, 194.82
+epicycledisplay.js:386 2 | 74.48999999999998, 315.15, 194.82
+*/
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "green";
+        ctx.strokeRect(xt, yt, sampleDim, sampleDim);
+        clickBoxes.push([xt, yt, sampleDim]);
+
+        index++;
+        col++;
+        if (col % 2 == 0) {
+            col = 0;
+            row++;
+        }
+
+
+    }
+
+    canvas.addEventListener("click", selectSample);
+
+}
+
+function selectSample(e) {
+    let x = getMousePos(canvas, e).x;
+    let y = getMousePos(canvas, e).y;
+
+    console.log("Clicked on Sample Screen: " + x + ", " + y);
+    console.log("click-boxes size: " + clickBoxes.length);
+    for (let i = 0; i < clickBoxes.length; i++) {
+        console.log(i + " | " + clickBoxes[i][0] + ", " + clickBoxes[i][1] + ", " + clickBoxes[i][2]);
+    }
+    let i = 0;
+    let clicked = -1;
+    for (; i < clickBoxes.length; i++) {
+        if (x > clickBoxes[i][0] && x < (clickBoxes[i][0] + clickBoxes[i][2]) && y > clickBoxes[i][1] && y < (clickBoxes[i][1] + clickBoxes[i][2])) {
+            clicked = i;
+            console.log("clicked " + i);
+            break;
+        }
+    }
+
+    if (clicked != -1) {
+        sampleChosen = clicked;
+        mouseInputs = [];
+        points[sampleChosen].updateAvailableArea(width, breathing_room);
+
+        for (let i = 0; i < points[sampleChosen].getLength(); i++) {
+            mouseInputs.push([points[sampleChosen].getPointX(i), points[sampleChosen].getPointY(i)]);
+        }
+        canvas.removeEventListener("click", selectSample);
+        finishedButtonListener();
+    }
+}
+
+function addDrawMouseListeners() {
+    canvas.addEventListener("mousemove", draw_mouseMove);
+    canvas.addEventListener("mousedown", draw_mouseDown);
+    canvas.addEventListener("mouseup", draw_mouseUp);
+}
+
+function removeDrawMouseListeners() {
+    canvas.removeEventListener("mousemove", draw_mouseMove);
+    canvas.removeEventListener("mousedown", draw_mouseDown);
+    canvas.removeEventListener("mouseup", draw_mouseUp);
+}
+
+function backButtonListener() {
+    stopAnimationWrapper(timerId);
+    initDrawMode();
+}
+function finishedButtonListener() {
+    if (drawMode) {
+        drawMode = false;
+        initDisplayMode();
+
+        if (approxOnlyToggle) {
+            drawApproximation();
+        } else {
+            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+        }
+    } 
+    else {
+        // window.cancelAnimationFrame(raf);
+
+        
+        // stopAnimationWrapper(timerId);
+
+        // initDrawMode(); 
+    }
+  }
 
 function showGoalToggleListener() {
     goalShownToggle = this.checked;
@@ -245,6 +488,7 @@ function approxOnlyToggleListener() {
             focusSlider.value = (numVectInUse - 1);
             camera.zoomTo(numVectInUse - 1);
         }
+
         focusSlider.max = (numVectInUse - 1);
         timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
     }
@@ -309,29 +553,7 @@ function eraseButtonListener() {
         document.getElementById("btn_swap").disabled = true;
 }
 
-function swapButtonListener() {
-    if (drawMode) {
-        drawMode = false;
 
-
-        // focusSlider.style.display = "block";
-
-        // adjustNSlider.style.display = "block";
-        initDisplayMode();
-        if (approxOnlyToggle) {
-            drawApproximation();
-        } else {
-            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
-        }
-    } else {
-        // window.cancelAnimationFrame(raf);
-
-        
-        stopAnimationWrapper(timerId);
-
-        initDrawMode(); 
-    }
-  }
 
 function canvasToCoords(inputs) {
     let scaled = [];
@@ -376,28 +598,33 @@ function drawDrawHere() {
 function initDrawMode() {
     drawMode = true;
     mouseInputs = [];
-    swapButton.value = "Finished";
-    document.getElementById("erase_div").style.display="block";
-    
+    sampleChosen = -1;
+    canvas.removeEventListener("click", selectSample);
+
+    document.getElementById("draw_control_div").style.display="flex";
+    document.getElementById("draw_options_div").style.display="flex";
+
     // document.getElementById("focus_div").style.display = "none";
     // document.getElementById("adjust_n_div").style.display = "none";
     // document.getElementById("circle_toggle_div").style.display = "none";
     // document.getElementById("approx_toggle_div").style.display = "none";
 
+
     document.getElementById("display_slider_div").style.display="none";
     document.getElementById("display_toggle_div").style.display = "none";
+    document.getElementById("display_control_div").style.display="none";
 
-
-    document.getElementById("btn_swap").disabled = true;
+    document.getElementById("btn_finished").disabled = true;
 
     scaleCanvas();
 
     ctx.clearRect(0, 0, width, height);
     drawDrawHere();
-    canvas.addEventListener("mousemove", draw_mouseMove);
-    canvas.addEventListener("mousedown", draw_mouseDown);
-    canvas.addEventListener("mouseup", draw_mouseUp);
+
+    addDrawMouseListeners();
+
 }
+
 
 function initDisplayMode() {
     ctx.clearRect(0, 0, width, height);
@@ -405,24 +632,33 @@ function initDisplayMode() {
 
     approximation = [];
     currT = 0;
-    swapButton.value = "Back";
-    document.getElementById("erase_div").style.display="none";
+    document.getElementById("draw_control_div").style.display="none";
+    document.getElementById("draw_options_div").style.display="none";
     // document.getElementById("focus_div").style.display = "block";
     // document.getElementById("adjust_n_div").style.display = "block";
     // document.getElementById("circle_toggle_div").style.display = "block";
     // document.getElementById("approx_toggle_div").style.display = "block";
 
-        document.getElementById("display_slider_div").style.display ="flex";
+    document.getElementById("display_slider_div").style.display ="flex";
     document.getElementById("display_toggle_div").style.display = "flex";
+    document.getElementById("display_control_div").style.display="flex";
+
     
-    canvas.removeEventListener("mousemove", draw_mouseMove);
-    canvas.removeEventListener("mousedown", draw_mouseDown);
-    canvas.removeEventListener("mouseup", draw_mouseUp);
+    removeDrawMouseListeners();
     scaleCanvas();
 
+    // console.log("INITDISPLAYMODE: mouse inputs, PRE COORDINATE SHIFT " + mouseInputs.length + "\n\n ");
+    // for (let i = 0; i < mouseInputs.length; i++) {
+    //     console.log("x, y: " + mouseInputs[i][0] + ", " + mouseInputs[i][1]);
+    // }
 
     let scaledInputs = canvasToCoords(mouseInputs);
     mouseInputs = scaledInputs;
+
+    // console.log("INITDISPLAYMODE: mouse inputs "+ mouseInputs.length + "\n\n ");
+    // for (let i = 0; i < mouseInputs.length; i++) {
+    //     console.log("x, y: " + mouseInputs[i][0] + ", " + mouseInputs[i][1]);
+    // }
 
     minX = minY = Number.MAX_VALUE;
     maxX = maxY = Number.MIN_VALUE;
@@ -442,7 +678,7 @@ function initDisplayMode() {
     transformation = new Transformation(scaledInputs);
     console.log("total available vectors = " + transformation.vectors.length);
     totalAvailableVectors = transformation.vectors.length;
-    adjustNSlider.max = totalAvailableVectors;
+    adjustNSlider.max = Math.min(totalAvailableVectors, maxNumberOfVectors);
     numVectInUse = Math.min(totalAvailableVectors, defaultNumOfVectors);
     adjustNSlider.value = numVectInUse;
     focusSlider.max = numVectInUse - 1;
@@ -577,17 +813,29 @@ function drawGoal() {
     if (!goalShownToggle) {
         return;
     }
-    ctx.setLineDash([4, 2]);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#000000";
-    ctx.beginPath();
-    ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
-    for (let i = 1; i < mouseInputs.length; i++) {
+    // let dashSpace = document.getElementById("closed_form_toggle").checked ? 2 : 6;
+    // ctx.setLineDash([4, dashSpace]);
+    // ctx.lineWidth = 1;
+    ctx.fillStyle = "rgb(86 98 102 / 50%)";
+    // ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
+    
+    // if (currT == 0) {
+    //         console.log("\n\n " + mouseInputs.length);
+
+    // }
+
+    for (let i = 0; i < mouseInputs.length; i++) {
+        ctx.beginPath();
+
         let x = coordsToDrawX(mouseInputs[i][0]);
         let y = coordsToDrawY(mouseInputs[i][1]);
-        ctx.lineTo(x, y);
+        ctx.arc(x, y, 1, 0, 2*Math.PI, false);
+        ctx.fill();
+
+        // if (currT == 0) {
+        //     console.log("Draw Goal: " + mouseInputs[i][0] + ", " + mouseInputs[i][1] + " -> | " + x + ", " + y);
+        // }
     }
-    ctx.stroke();
 }
 
 function getCoords(currT) {
@@ -658,7 +906,7 @@ function draw_mouseDown(e) {
     if (!drawnFlag) {
         ctx.clearRect(0, 0, width, height);
         mouseInputs = [];
-        document.getElementById("btn_swap").disabled = false;
+        document.getElementById("btn_finished").disabled = false;
 
     }
     ctx.clearRect(0, 0, width, height);
@@ -678,13 +926,12 @@ function draw_mouseDown(e) {
 
 function draw_mouseUp() {
     let x, y;
-    let threshold = 20;
 
     let d = Math.sqrt((currX - mouseInputs[0][0]) * (currX - mouseInputs[0][0]) + 
         (currY - mouseInputs[0][1])*(currY - mouseInputs[0][1]));
 
 
-    if (d < threshold) { // assume trying to draw a closed shape
+    if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
         x = mouseInputs[0][0];
         y = mouseInputs[0][1];
         mouseInputs.push([mouseInputs[0][0], mouseInputs[0][1]]);
@@ -730,8 +977,8 @@ function getMousePos(canvas, evt) {
 }
 
 function scaleCanvas() {
-    let controls_container = document.getElementById("epi-controls-container");
-    let epi_container = document.getElementById("epi-container");
+    let controls_container = document.getElementById("epi_controls_container");
+    let epi_container = document.getElementById("epi_container");
     let vp_width  = window.innerWidth || document.documentElement.clientWidth || 
     document.body.clientWidth;
     let vp_height = window.innerHeight|| document.documentElement.clientHeight|| 
@@ -772,75 +1019,13 @@ function scaleCanvas() {
             ctx.stroke();
             ctx.closePath();
         }
+        if (sampleScreen) {
+            initSampleScreen();
+        }
     } else if (approxOnlyToggle) {
         drawApproximation();
     }
-
-
 }
 
-const PI_arr = [[363,81],
-[360,90],[360,102],[360,114],[351,126],[339,138],[327,141],[315,147],[303,150],[291,153],[279,156],
-[276,165],[279,177],[279,189],[279,201],[276,213],[276,225],[276,237],[279,249],[279,258],[282,270],
-[288,282],[294,294],[291,306],[282,315],[270,315],[258,309],[252,297],[252,285],[249,273],[249,261],
-[249,249],[246,237],[246,225],[243,213],[240,201],[237,189],[234,177],[234,165],[222,162],[210,162],
-[198,159],[186,153],[177,162],[177,174],[177,186],[177,198],[177,210],[177,222],[177,234],[180,246],
-[180,255],[186,267],[186,276],[192,285],[195,297],[192,309],[180,312],[168,309],[156,303],[147,294],
-[141,282],[138,273],[138,261],[138,252],[135,240],[135,228],[135,216],[135,204],[138,192],[141,180],
-[144,168],[150,156],[150,144],[141,132],[129,123],[117,123],[105,126],[93,135],[81,147],[69,153],
-[57,156],[45,153],[33,147],[33,135],[39,123],[51,111],[63,99],[75,90],[87,84],[99,81],
-[111,78],[123,78],[135,78],[147,84],[159,84],[171,90],[183,96],[195,105],[207,111],[219,111],
-[231,114],[243,114],[255,111],[267,111],[279,108],[288,102],[300,99],[312,90],[324,78],[333,66],
-[339,57],[351,63],[357,75]];
 
-const summation_arr = [[324,135],
-[312,135],[300,135],[288,135],[276,126],[264,117],[252,117],[240,117],[228,117],[216,117],[204,117],
-[192,117],[180,117],[168,117],[156,117],[144,117],[159,126],[171,135],[183,141],[195,150],[207,156],
-[219,165],[231,171],[243,180],[255,189],[252,198],[243,204],[231,213],[219,225],[207,234],[195,243],
-[183,252],[171,264],[174,270],[186,270],[198,270],[210,270],[222,270],[234,270],[246,270],[258,270],
-[264,261],[270,249],[273,237],[282,234],[294,234],[306,234],[312,240],[312,252],[312,264],[312,276],
-[312,288],[312,300],[309,309],[297,309],[285,309],[273,309],[261,309],[249,309],[237,309],[225,309],
-[213,309],[201,309],[189,309],[177,309],[165,309],[153,309],[141,309],[129,309],[117,309],[105,309],
-[93,309],[81,309],[72,306],[72,294],[72,282],[72,270],[72,258],[78,249],[90,240],[102,231],
-[111,225],[123,216],[135,207],[147,201],[159,192],[153,186],[141,180],[129,171],[117,165],[105,159],
-[93,153],[81,147],[72,141],[72,129],[72,117],[72,105],[72,93],[75,84],[87,84],[99,84],
-[111,84],[123,84],[135,84],[147,84],[159,84],[171,84],[183,84],[195,84],[207,84],[219,84],
-[231,84],[243,84],[255,84],[267,84],[279,84],[291,84],[303,84],[315,84],[324,87],[324,99],
-[324,111],[324,123]];
 
-const squares_arr = [[10, 10],[18, 10],[26, 10],[34, 10],[42, 10],[50, 10],[58, 10],[66, 10],[74, 10],[82, 10],
-[90, 10],[98, 10],[106, 10],[114, 10],[122, 10],[130, 10],[138, 10],[146, 10],[154, 10],[162, 10],
-[170, 10],[178, 10],[186, 10],[194, 10],[202, 10],[210, 10],[218, 10],[226, 10],[234, 10],[242, 10],
-[250, 10],[250, 18],[250, 26],[250, 34],[250, 42],[250, 50],[250, 58],[250, 66],[250, 74],[250, 82],
-[250, 90],[258, 90],[266, 90],[274, 90],[282, 90],[290, 90],[298, 90],[306, 90],[314, 90],[322, 90],
-[330, 90],[330, 98],[330, 106],[330, 114],[330, 122],[330, 130],[330, 138],[330, 146],[330, 154],[330, 162],
-[330, 170],[338, 170],[346, 170],[354, 170],[362, 170],[370, 170],[378, 170],[386, 170],[394, 170],[402, 170],
-[410, 170],[410, 178],[410, 186],[410, 194],[410, 202],[410, 210],[410, 218],[410, 226],[410, 234],[410, 242],
-[410, 250],[410, 258],[410, 266],[410, 274],[410, 282],[410, 290],[410, 298],[410, 306],[410, 314],[410, 322],
-[410, 330],[410, 338],[410, 346],[410, 354],[410, 362],[410, 370],[410, 378],[410, 386],[410, 394],[410, 402],
-[410, 410],[402, 410],[394, 410],[386, 410],[378, 410],[370, 410],[362, 410],[354, 410],[346, 410],[338, 410],
-[330, 410],[322, 410],[314, 410],[306, 410],[298, 410],[290, 410],[282, 410],[274, 410],[266, 410],[258, 410],
-[250, 410],[242, 410],[234, 410],[226, 410],[218, 410],[210, 410],[202, 410],[194, 410],[186, 410],[178, 410],
-[170, 410],[170, 402],[170, 394],[170, 386],[170, 378],[170, 370],[170, 362],[170, 354],[170, 346],[170, 338],
-[170, 330],[170, 322],[170, 314],[170, 306],[170, 298],[170, 290],[170, 282],[170, 274],[170, 266],[170, 258],
-[170, 250],[170, 242],[170, 234],[170, 226],[170, 218],[170, 210],[170, 202],[170, 194],[170, 186],[170, 178],
-[170, 170],[178, 170],[186, 170],[194, 170],[202, 170],[210, 170],[218, 170],[226, 170],[234, 170],[242, 170],
-[250, 170],[258, 170],[266, 170],[274, 170],[282, 170],[290, 170],[298, 170],[306, 170],[314, 170],[322, 170],
-[330, 170],[330, 178],[330, 186],[330, 194],[330, 202],[330, 210],[330, 218],[330, 226],[330, 234],[330, 242],
-[330, 250],[330, 258],[330, 266],[330, 274],[330, 282],[330, 290],[330, 298],[330, 306],[330, 314],[330, 322],
-[330, 330],[322, 330],[314, 330],[306, 330],[298, 330],[290, 330],[282, 330],[274, 330],[266, 330],[258, 330],
-[250, 330],[242, 330],[234, 330],[226, 330],[218, 330],[210, 330],[202, 330],[194, 330],[186, 330],[178, 330],
-[170, 330],[162, 330],[154, 330],[146, 330],[138, 330],[130, 330],[122, 330],[114, 330],[106, 330],[98, 330],
-[90, 330],[90, 322],[90, 314],[90, 306],[90, 298],[90, 290],[90, 282],[90, 274],[90, 266],[90, 258],
-[90, 250],[90, 242],[90, 234],[90, 226],[90, 218],[90, 210],[90, 202],[90, 194],[90, 186],[90, 178],
-[90, 170],[90, 162],[90, 154],[90, 146],[90, 138],[90, 130],[90, 122],[90, 114],[90, 106],[90, 98],
-[90, 90],[98, 90],[106, 90],[114, 90],[122, 90],[130, 90],[138, 90],[146, 90],[154, 90],[162, 90],
-[170, 90],[178, 90],[186, 90],[194, 90],[202, 90],[210, 90],[218, 90],[226, 90],[234, 90],[242, 90],
-[250, 90],[250, 98],[250, 106],[250, 114],[250, 122],[250, 130],[250, 138],[250, 146],[250, 154],[250, 162],
-[250, 170],[250, 178],[250, 186],[250, 194],[250, 202],[250, 210],[250, 218],[250, 226],[250, 234],[250, 242],
-[250, 250],[242, 250],[234, 250],[226, 250],[218, 250],[210, 250],[202, 250],[194, 250],[186, 250],[178, 250],
-[170, 250],[162, 250],[154, 250],[146, 250],[138, 250],[130, 250],[122, 250],[114, 250],[106, 250],[98, 250],
-[90, 250],[82, 250],[74, 250],[66, 250],[58, 250],[50, 250],[42, 250],[34, 250],[26, 250],[18, 250],
-[10, 250],[10, 242],[10, 234],[10, 226],[10, 218],[10, 210],[10, 202],[10, 194],[10, 186],[10, 178],
-[10, 170],[10, 162],[10, 154],[10, 146],[10, 138],[10, 130],[10, 122],[10, 114],[10, 106],[10, 98],
-[10, 90],[10, 82],[10, 74],[10, 66],[10, 58],[10, 50],[10, 42],[10, 34],[10, 26],[10, 18]];

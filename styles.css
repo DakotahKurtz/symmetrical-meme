@@ -40,7 +40,7 @@ main {
     padding-bottom: 10px;
 }
 
-#canvas-interactive {
+#canvas_interactive {
     border: 1px solid rgb(13, 13, 13);
     width: 100%;
     flex: 1;
