@@ -80,95 +80,84 @@ class Points {
 }
 
 class Camera {
-    zoom;
-    focusedOn;
-    width;
-    height;
-    tx;
-    ty;
-    tickRate;
-    saveState;
-    saved;
+    #zoom;
+    #focusedOn;
+    #tx;
+    #ty;
+    #tickRate;
+    #saveState;
+    #saved;
 
-    constructor(width, height) {
-        this.width = width;
-        this.height = height;
-        this.zoom = 1;
-        this.focusedOn = 0;
-        this.tx = 0;
-        this.ty = 0;
-        this.tickRate = defaultTick;
-        this.saved = false;
+    constructor() {
+
+        this.#zoom = 1;
+        this.#focusedOn = 0;
+        this.#tx = 0;
+        this.#ty = 0;
+        this.#tickRate = defaultTick;
+        this.#saved = false;
         
     }
 
     save() {
-        this.saved = true;
-        this.saveState = new Camera(this.width, this.height);
-        this.saveState.zoom = this.zoom;
-        this.saveState.focusedOn = this.focusedOn;
-        this.saveState.tx = this.tx;
-        this.saveState.ty = this.ty;
-        this.saveState.tickRate = this.tickRate;
+        this.#saved = true;
+        this.#saveState = new Camera();
+        this.#saveState.#zoom = this.#zoom;
+        this.#saveState.#focusedOn = this.#focusedOn;
+        this.#saveState.#tx = this.#tx;
+        this.#saveState.#ty = this.#ty;
+        this.#saveState.#tickRate = this.#tickRate;
     }
 
     load() {
-        if (!this.saved) {
+        if (!this.#saved) {
             return;
         }
-        this.width = this.saveState.width;
-        this.height = this.saveState.height;
-        this.zoom = this.saveState.zoom;
-        this.focusedOn = this.saveState.focusedOn;
-        this.tx = this.saveState.tx;
-        this.ty = this.saveState.ty;
-        this.tickRate = this.saveState.tickRate;
+
+        this.#zoom = this.#saveState.#zoom;
+        this.#focusedOn = this.#saveState.#focusedOn;
+        this.#tx = this.#saveState.#tx;
+        this.#ty = this.#saveState.#ty;
+        this.#tickRate = this.#saveState.#tickRate;
     }
 
     reset() {
-        this.zoom = 1;
-        this.focusedOn = 0;
-        this.tx = 0;
-        this.ty = 0;
-        this.tickRate = defaultTick
-    }
-
-    center(x, y, dim) {
-
-        this.tx = (this.width / 2) - (x * this.zoom);
-        this.ty = (this.height / 2) - (y * this.zoom);
+        this.#zoom = 1;
+        this.#focusedOn = 0;
+        this.#tx = 0;
+        this.#ty = 0;
+        this.#tickRate = defaultTick
     }
 
     zoomTo(inUse) {
-        this.focusedOn = inUse;
+        this.#focusedOn = inUse;
         if (inUse == 0) {
             this.reset();
+            return;
         }
 
         this.updateZoom();
     }
 
-
-
     zoomIn() {
-        if (this.focusedOn + 1 >= numVectInUse) {
+        if (this.#focusedOn + 1 >= numVectInUse) {
             return false;
         }
 
-        this.focusedOn++;
+        this.#focusedOn++;
         this.updateZoom();
 
         return true;
     }
 
     zoomOut() {
-        if (this.focusedOn <= 0) {
+        if (this.#focusedOn <= 0) {
             return false;
         }
 
-        this.focusedOn--;
+        this.#focusedOn--;
 
-        if (this.focusedOn == 0) {
+        if (this.#focusedOn == 0) {
             this.reset();
             return true;
         }
@@ -178,36 +167,54 @@ class Camera {
     }
 
     updateZoom() {
-        let previousZoom = this.zoom;
+        let previousZoom = this.#zoom;
 
-        let range = vectors[this.focusedOn].radius * 2;
-        this.zoom = (Math.min(width, height) - (breathing_room * 2)) / range;
+        let range = vectors[this.#focusedOn].radius * 2;
+        this.#zoom = (Math.min(width, height) - (breathing_room * 2)) / range;
 
-        if (this.zoom > (Math.min(width, height) / 5)) {
-            this.zoom = previousZoom;
+        if (this.#zoom > (Math.min(width, height) / 5)) {
+            this.#zoom = previousZoom;
             return;
         }
 
-        if (this.focusedOn == 0) {
-            this.tickRate = defaultTick;
+        if (this.#focusedOn == 0) {
+            this.#tickRate = defaultTick;
             stopAnimationWrapper(timerId);
-            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+            timerId = startAnimationWrapper(drawEpicycles, this.#tickRate);
             return;
         }
-        let tRate = this.tickRate * (this.zoom / previousZoom);
+        let tRate = this.#tickRate * (this.#zoom / previousZoom);
 
         if (this.#withinRateRange(tRate)) {
-            this.tickRate = tRate;
+            this.#tickRate = tRate;
             stopAnimationWrapper(timerId);
-            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+            timerId = startAnimationWrapper(drawEpicycles, this.#tickRate);
         }
+    }
+
+    center(x, y, dim) {
+        // console.log("tx,ty: " + this.tx + ", " + this.ty);
+        // console.log("Recalculating with: x,y,dim: " + x + ", " + y + " | ");
+        // console.log("-");
+        this.#tx = (width / 2) - (x * this.#zoom);
+        this.#ty = (height / 2) - (y * this.#zoom);
     }
 
     #withinRateRange(rate) {
         return (rate >= defaultTick) && (rate <= defaultTick*5);
     }
+
+    getTx() {return this.#tx;}
+    getTy() {return this.#ty;}
+    getZoom() {return this.#zoom}
+    getFocusedOn() {return this.#focusedOn}
+    getTickRate() {return this.#tickRate}
+    setTickRate(tickRate) {this.#tickRate = tickRate;}
+
+
     
 }
+
 
 var samples = [];
 samples.push(PI_arr, squares_arr, summation_arr);
@@ -223,13 +230,11 @@ var positionInfo = canvas.getBoundingClientRect();
 var height = positionInfo.height;
 var width = positionInfo.width;
 var vectors;
-var minX, minY, maxX, maxY, minC, maxRange;
     drawnFlag = false,
     prevX = 0,
     currX = 0,
     prevY = 0,
-    currY = 0,
-    dot_flag = false;
+    currY = 0;
 
 let running = false;
 var drawLineWidth = 2;
@@ -258,47 +263,36 @@ let clickBoxes = [];
 
 let sampleScreen = false;
 
-var camera = new Camera(width, height);
+var camera = new Camera();
 const ctx = canvas.getContext("2d");
 let sampleChosen = -1;
 
 
 
-let raf;
 
-window.addEventListener("load", () => {
-    console.log("Loaded: ");
-    initDrawMode();
-    scaleCanvas();
-
-});
-
-window.addEventListener('resize', () => {
-    scaleCanvas();
-
-});
-
-
-finishedButton = document.getElementById("btn_finished");
-finishedButton.addEventListener("click", finishedButtonListener);
-eraseButton = document.getElementById("btn_erase");
-eraseButton.addEventListener("click", eraseButtonListener);
-
-backButton = document.getElementById("btn_back");
-backButton.addEventListener("click", backButtonListener);
 focusSlider = document.getElementById("range_focus_selector");
 focusSlider.addEventListener("input", focusSliderListener);
+
 adjustNSlider = document.getElementById("range_adjust_n");
 adjustNSlider.addEventListener("input", adjustNSliderListener);
 
-samplesButton = document.getElementById("btn_samples");
-samplesButton.addEventListener("click", samplesButtonListener);
 
+window.addEventListener('resize', scaleCanvas);
+window.addEventListener("load", loadListener);
 
-
+document.getElementById("btn_finished").addEventListener("click", finishedButtonListener);
+document.getElementById("btn_erase").addEventListener("click", eraseButtonListener);
+document.getElementById("btn_back").addEventListener("click", backButtonListener);
+document.getElementById("btn_samples").addEventListener("click", samplesButtonListener);
 document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
-document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
+document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
+
+function loadListener() {
+    initDrawMode();
+    scaleCanvas();
+    console.log(positionInfo.width);
+}
 
 function samplesButtonListener() {
     sampleScreen = true;
@@ -310,6 +304,7 @@ function samplesButtonListener() {
 
 
 function initSampleScreen() {
+    console.log("init sample screen");
 
     canvas.removeEventListener("click", selectSample);
     sampleChosen = -1;
@@ -358,13 +353,6 @@ function initSampleScreen() {
             ctx.fill();
 
         }
-/*
-Clicked on Sample Screen: 404.5878260869565, 169.53326086956523
-epicycledisplay.js:384 click-boxes size: 3
-epicycledisplay.js:386 0 | 74.48999999999998, 74.48999999999998, 194.82
-epicycledisplay.js:386 1 | 315.15, 74.48999999999998, 194.82
-epicycledisplay.js:386 2 | 74.48999999999998, 315.15, 194.82
-*/
         ctx.lineWidth = 3;
         ctx.strokeStyle = "green";
         ctx.strokeRect(xt, yt, sampleDim, sampleDim);
@@ -385,6 +373,7 @@ epicycledisplay.js:386 2 | 74.48999999999998, 315.15, 194.82
 }
 
 function selectSample(e) {
+    console.log("Select sample attempt");
     let x = getMousePos(canvas, e).x;
     let y = getMousePos(canvas, e).y;
 
@@ -411,6 +400,9 @@ function selectSample(e) {
         for (let i = 0; i < points[sampleChosen].getLength(); i++) {
             mouseInputs.push([points[sampleChosen].getPointX(i), points[sampleChosen].getPointY(i)]);
         }
+
+        console.log("clicked sample - REMOVING click listener");
+        sampleScreen = false;
         canvas.removeEventListener("click", selectSample);
         finishedButtonListener();
     }
@@ -440,17 +432,9 @@ function finishedButtonListener() {
         if (approxOnlyToggle) {
             drawApproximation();
         } else {
-            timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+            timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
         }
     } 
-    else {
-        // window.cancelAnimationFrame(raf);
-
-        
-        // stopAnimationWrapper(timerId);
-
-        // initDrawMode(); 
-    }
   }
 
 function showGoalToggleListener() {
@@ -468,15 +452,12 @@ function approxOnlyToggleListener() {
         stopAnimationWrapper(timerId);
         camera.save();
         camera.reset();
-        // document.getElementById("focus_div").style.display = "none";
-        // document.getElementById("circle_toggle_div").style.display = "none";
+
         document.getElementById("range_focus_selector").disabled = true;
         drawApproximation();
     } else {
         stopAnimationWrapper(timerId);
 
-        // document.getElementById("focus_div").style.display = "block";
-        // document.getElementById("circle_toggle_div").style.display = "block";
         document.getElementById("range_focus_selector").disabled = false;
         camera.load();
 
@@ -490,7 +471,7 @@ function approxOnlyToggleListener() {
         }
 
         focusSlider.max = (numVectInUse - 1);
-        timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+        timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
     }
 }
 
@@ -529,7 +510,7 @@ function adjustNSliderListener() {
         numVectInUse = adjustNSlider.value;
         vectors = transformation.getVectors(numVectInUse);
         console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
-
+        focusSlider.max = numVectInUse - 1;
 
         if (focusSlider.value >= numVectInUse) {
             focusSlider.value = (numVectInUse - 1);
@@ -539,7 +520,7 @@ function adjustNSliderListener() {
             focusSlider.max = (numVectInUse - 1);
 
         }
-        timerId = startAnimationWrapper(drawEpicycles, camera.tickRate);
+        timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
     }
 
 
@@ -575,8 +556,8 @@ function coordstoDraw(coords) {
     let x, y;
 
     for (let i = 0; i < coords.length; i++) {
-        x = (coords[i][0] + (width / 2)) * camera.zoom + camera.tx;
-        y = ((height / 2) - coords[i][1]) * camera.zoom + camera.ty;
+        x = (coords[i][0] + (width / 2)) * camera.getZoom() + camera.getTx();
+        y = ((height / 2) - coords[i][1]) * camera.getZoom() + camera.getTy();
         toDraw.push([x, y]);
     }
 
@@ -599,7 +580,7 @@ function initDrawMode() {
     drawMode = true;
     mouseInputs = [];
     sampleChosen = -1;
-    canvas.removeEventListener("click", selectSample);
+    // canvas.removeEventListener("click", selectSample);
 
     document.getElementById("draw_control_div").style.display="flex";
     document.getElementById("draw_options_div").style.display="flex";
@@ -672,8 +653,7 @@ function initDisplayMode() {
     }
 
 
-    minC = Math.min(minX, minY);
-    maxRange = Math.max(maxX - minX, maxY - minY);
+
 
     transformation = new Transformation(scaledInputs);
     console.log("total available vectors = " + transformation.vectors.length);
@@ -732,8 +712,8 @@ function drawEpicycles() {
 
 
 
-    if (camera.focusedOn != 0) {
-        camera.center(circleCenters[camera.focusedOn-1][0] + (width / 2), (height / 2) - circleCenters[camera.focusedOn-1][1]);
+    if (camera.getFocusedOn() != 0) {
+        camera.center(circleCenters[camera.getFocusedOn() - 1][0] + (width / 2), (height / 2) - circleCenters[camera.getFocusedOn() - 1][1]);
     }
 
     if (circleShownToggle) {
@@ -796,12 +776,6 @@ function drawEpicycles() {
     drawNumVectors();
 
     currT += tInc;
-    // await new Promise(r => setTimeout(r, 200));
-
-
-    // raf = window.requestAnimationFrame(drawEpicycles);
-    
-    
 }
 
 function drawNumVectors() {
@@ -874,7 +848,7 @@ function getVectorEndpoints(time) {
 }
 
 function scale(radius) {
-    return radius * camera.zoom;
+    return radius * camera.getZoom();
 }
 
 
@@ -882,13 +856,13 @@ function scale(radius) {
 function coordsToDrawX(x) {
 let coord = x + ((width / (2)));
 
-        return coord * camera.zoom + camera.tx;
+        return coord * camera.getZoom() + camera.getTx();
     
 }
 
 function coordsToDrawY(y) {
     let coord = (height / 2) - y;
-    return coord * camera.zoom + camera.ty;
+    return coord * camera.getZoom()+ camera.getTy();
         // return ((height / (2)) / 1) - y;
 }
 
@@ -925,11 +899,6 @@ function draw_mouseDown(e) {
 }
 
 function draw_mouseUp() {
-    let x, y;
-
-    let d = Math.sqrt((currX - mouseInputs[0][0]) * (currX - mouseInputs[0][0]) + 
-        (currY - mouseInputs[0][1])*(currY - mouseInputs[0][1]));
-
 
     if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
         x = mouseInputs[0][0];
@@ -1000,8 +969,8 @@ function scaleCanvas() {
         epi_container.style.height = h + control_height + "px";
     }
 
-    canvas.width = width = camera.width = w;
-    canvas.height = height = camera.height = h;
+    canvas.width = width  = w;
+    canvas.height = height = h;
 
     breathing_room = width * .3;
 

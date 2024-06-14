@@ -69,7 +69,7 @@ class Transformation {
     vectors;
     points;
 
-    constructor(inputs) {
+     constructor(inputs) {
        this.N = inputs.length;
         this.vectors = [];
         this.points = [];
@@ -101,3 +101,4 @@ class Transformation {
 
 
 }
+
