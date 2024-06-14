@@ -1,3 +1,307 @@
+
+
+class DrawScreen {
+
+    prevX;
+    prevY;
+    currX;
+    currY;
+    drawnFlag = false;
+    #drawMode = false;
+    
+    constructor() {
+        this.prevX = this.prevY = this.currX = this.currY = 0;
+        document.getElementById("btn_finished").addEventListener("click", this.finishedButtonListener);
+        document.getElementById("btn_erase").addEventListener("click", this.eraseButtonListener);
+        document.getElementById("btn_samples").addEventListener("click", this.samplesButtonListener);
+    }
+
+    samplesButtonListener() {
+        sampleScreen = true;
+        drawScreen.removeDrawMouseListeners();
+        drawScreen.initSampleScreen()
+    }
+
+    finishedButtonListener() {
+        if (drawScreen.getDrawMode()) {
+            drawScreen.setDrawMode(false);
+            initDisplayMode();
+    
+            if (approxOnlyToggle) {
+                drawApproximation();
+            } else {
+                timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
+            }
+        } 
+      }
+
+    eraseButtonListener() {
+        ctx.clearRect(0, 0, width, height);
+        mouseInputs = [];
+        drawScreen.drawDrawHere();
+        document.getElementById("btn_finished").disabled = true;
+    }
+    
+    initSampleScreen() {
+        console.log("init sample screen");
+        canvas.removeEventListener("click", this.selectSample);
+    
+        sampleChosen = -1;
+    
+        let size = .9;
+        let padding = .08 * Math.min(width, height);
+        let br = .03 * Math.min(width, height);
+    
+        let swidth = width * size;
+        let sheight = height * size;
+        let zx = (width - swidth) / 2;
+        let zy = (height - sheight) / 2;
+    
+        ctx.clearRect(zx, zy, swidth, sheight);
+        // draw "border"
+        ctx.strokeStyle = "#FFA500";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(zx, zy, swidth, sheight);
+    
+        let sampleDim = (Math.min(width, height) - padding * 4) / 2;
+        console.log("Sampledim: " + sampleDim);
+    
+       clickBoxes = [];
+    
+        let p;
+        let xt, yt;
+        let col, row, index;
+        col = row = index = 0;
+    
+        while (index < points.length) {
+            p = points[index];
+            p.updateAvailableArea(sampleDim, br);
+            xt = zx + (padding * (col + 1)) + (sampleDim * col);
+            yt = zy + (padding * (row + 1)) + (sampleDim * row);
+    
+            ctx.fillStyle = "black";
+            // ctx.lineWidth = 2;
+    
+            ctx.beginPath();
+            ctx.moveTo(p.getPointX(0) + xt, p.getPointY(0) + yt);
+            for (let i = 0; i < p.getLength(); i++) {
+                ctx.beginPath();
+                ctx.arc(p.getPointX(i) + xt, p.getPointY(i) + yt, .5, 0, 2 * Math.PI, false);
+                ctx.fill();
+    
+            }
+    
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "green";
+            ctx.strokeRect(xt, yt, sampleDim, sampleDim);
+            clickBoxes.push([xt, yt, sampleDim]);
+    
+            index++;
+            col++;
+            if (col % 2 == 0) {
+                col = 0;
+                row++;
+            }
+        }
+    
+        let backArrowInc = (padding / 8);
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(zx + backArrowInc, zy + (backArrowInc * 4));
+        ctx.lineTo(zx + (backArrowInc * 3), zy + backArrowInc);
+        ctx.lineTo(zx + (backArrowInc * 3), zy + (backArrowInc * 3));
+        ctx.lineTo(zx + (backArrowInc * 6), zy + (backArrowInc * 3));
+        ctx.lineTo(zx + (backArrowInc * 6), zy + (backArrowInc * 5));
+        ctx.lineTo(zx + (backArrowInc * 3), zy + (backArrowInc * 5));
+        ctx.lineTo(zx + (backArrowInc * 3), zy + (backArrowInc * 7));
+        ctx.lineTo(zx + backArrowInc, zy + (backArrowInc * 4));
+        ctx.stroke();
+    
+        clickBoxes.push([zx, zy, (backArrowInc * 7)]);
+    
+        canvas.addEventListener("click", this.selectSample);
+    
+    }
+    
+    selectSample(e) {
+        console.log("Select sample attempt");
+        let x = DrawScreen.getMousePos(canvas, e).x;
+        let y = DrawScreen.getMousePos(canvas, e).y;
+    
+        console.log("Clicked on Sample Screen: " + x + ", " + y);
+        console.log("click-boxes size: " + clickBoxes.length);
+        for (let i = 0; i < clickBoxes.length; i++) {
+            console.log(i + " | " + clickBoxes[i][0] + ", " + clickBoxes[i][1] + ", " + clickBoxes[i][2]);
+        }
+        let i = 0;
+        let clicked = -1;
+        for (; i < clickBoxes.length; i++) {
+            if (x > clickBoxes[i][0] && x < (clickBoxes[i][0] + clickBoxes[i][2]) && y > clickBoxes[i][1] && y < (clickBoxes[i][1] + clickBoxes[i][2])) {
+                clicked = i;
+                console.log("clicked " + i);
+                break;
+            }
+        }
+    
+        if (clicked != -1) {
+            if (clicked < points.length) {
+                sampleChosen = clicked;
+                mouseInputs = [];
+                points[sampleChosen].updateAvailableArea(width, breathing_room);
+    
+                for (let i = 0; i < points[sampleChosen].getLength(); i++) {
+                    mouseInputs.push([points[sampleChosen].getPointX(i), points[sampleChosen].getPointY(i)]);
+                }
+    
+                console.log("clicked sample - REMOVING click listener");
+                sampleScreen = false;
+                canvas.removeEventListener("click", this.selectSample);
+                drawScreen.finishedButtonListener();
+            }
+            else {
+                switch (clicked) {
+                    case points.length:
+                        console.log("clicked sample - REMOVING click listener");
+                        sampleScreen = false;
+                        canvas.removeEventListener("click", this.selectSample);
+                        drawScreen.initDrawMode();
+                }
+            }
+        }
+    }
+
+    initDrawMode() {
+        this.#drawMode = true;
+        this.drawnFlag = false;
+
+        camera.reset();
+        mouseInputs = [];
+        sampleChosen = -1;
+    
+        document.getElementById("draw_control_div").style.display="flex";
+        document.getElementById("draw_options_div").style.display="flex";
+    
+        document.getElementById("display_slider_div").style.display="none";
+        document.getElementById("display_toggle_div").style.display = "none";
+        document.getElementById("display_control_div").style.display="none";
+        document.getElementById("btn_finished").disabled = true;
+    
+        scaleCanvas();
+    
+        ctx.clearRect(0, 0, width, height);
+        this.drawDrawHere();
+        console.log("Mouseinput Length: " + mouseInputs.length);
+        drawScreen.addDrawMouseListeners();
+    }
+
+    addDrawMouseListeners() {
+        canvas.addEventListener("mousemove", this.draw_mouseMove);
+        canvas.addEventListener("mousedown", this.draw_mouseDown);
+        canvas.addEventListener("mouseup", this.draw_mouseUp);
+    }
+    
+    removeDrawMouseListeners() {
+        canvas.removeEventListener("mousemove", this.draw_mouseMove);
+        canvas.removeEventListener("mousedown", this.draw_mouseDown);
+        canvas.removeEventListener("mouseup", this.draw_mouseUp);
+    }
+
+        /*
+    RafalS https://stackoverflow.com/questions/17130395/real-mouse-position-in-canvas/33063222#33063222
+    Oct 11, 2015
+    */
+    static getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+            y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+        };
+    }
+
+
+    
+    draw_mouseDown(e) {
+        if (!this.drawnFlag) {
+            ctx.clearRect(0, 0, width, height);
+            mouseInputs = [];
+            document.getElementById("btn_finished").disabled = false;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+    
+        this.prevX = this.currX;
+        this.prevY = this.currY;
+        this.currX = DrawScreen.getMousePos(canvas, e).x;
+        this.currY = DrawScreen.getMousePos(canvas, e).y;
+        this.drawnFlag = true;
+    
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.fillRect(this.currX, this.currY, 2, 2);
+            ctx.closePath();
+            mouseInputs.push([this.currX, this.currY]);
+    }
+    
+    draw_mouseUp() {
+    
+        if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
+            let x = mouseInputs[0][0];
+            let y = mouseInputs[0][1];
+            mouseInputs.push([x,y]);
+            ctx.beginPath();
+            ctx.moveTo(this.currX, this.currY);
+            ctx.lineTo(x,y);
+            ctx.stroke();
+        } else {
+            // manual reverse
+            let rev = [];
+            for (let i = 0; i < mouseInputs.length; i++) {
+                rev.push([mouseInputs[mouseInputs.length - 1 - i][0], mouseInputs[mouseInputs.length - 1 - i][1]]);
+            }
+            mouseInputs = mouseInputs.concat(rev);
+        }
+    
+    
+        this.drawnFlag = false;
+    }
+    
+    draw_mouseMove(e) {
+    
+        if (this.drawnFlag) {
+            this.prevX = this.currX;
+            this.prevY = this.currY;
+            this.currX = DrawScreen.getMousePos(canvas, e).x;
+            this.currY = DrawScreen.getMousePos(canvas, e).y;
+            mouseInputs.push([this.currX, this.currY]);
+
+            ctx.beginPath();
+            ctx.moveTo(this.prevX, this.prevY);
+            ctx.lineTo(this.currX, this.currY);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = drawLineWidth;
+            ctx.stroke();
+            ctx.closePath();
+            
+        }
+    }
+
+    drawDrawHere() {
+        let text = "draw here!";
+        let size = "48";
+        ctx.font =  size + "px serif";
+        let w = ctx.measureText(text).width;
+        let x = (width - w) / 2;
+        let y = (height - parseInt(size)) / 2;
+        ctx.fillStyle = "rgb(130 151 184 / 50%)";
+        ctx.fillText(text, x, y);
+    
+    }
+
+    getDrawMode(){return this.#drawMode;}
+    setDrawMode(b){this.#drawMode = b;}
+}
+
 class Points {
     #minX;
     #minY;
@@ -88,20 +392,20 @@ class Camera {
     #saveState;
     #saved;
 
-    constructor() {
+    constructor(currentTick) {
 
         this.#zoom = 1;
         this.#focusedOn = 0;
         this.#tx = 0;
         this.#ty = 0;
-        this.#tickRate = defaultTick;
+        this.#tickRate = currentTick;
         this.#saved = false;
         
     }
 
     save() {
         this.#saved = true;
-        this.#saveState = new Camera();
+        this.#saveState = new Camera(this.#tickRate);
         this.#saveState.#zoom = this.#zoom;
         this.#saveState.#focusedOn = this.#focusedOn;
         this.#saveState.#tx = this.#tx;
@@ -192,6 +496,8 @@ class Camera {
         }
     }
 
+
+
     center(x, y, dim) {
         // console.log("tx,ty: " + this.tx + ", " + this.ty);
         // console.log("Recalculating with: x,y,dim: " + x + ", " + y + " | ");
@@ -209,48 +515,46 @@ class Camera {
     getZoom() {return this.#zoom}
     getFocusedOn() {return this.#focusedOn}
     getTickRate() {return this.#tickRate}
-    setTickRate(tickRate) {this.#tickRate = tickRate;}
-
-
-    
-}
-
-
-var samples = [];
-samples.push(PI_arr, squares_arr, summation_arr);
-
-let points = [];
-for (let i = 0; i < samples.length; i++) {
-    points.push(new Points(samples[i]));
+    setTickRate(tickRate) {this.#tickRate = tickRate;} 
 }
 
 const canvas = document.getElementById("canvas_interactive");
-
-var positionInfo = canvas.getBoundingClientRect();
-var height = positionInfo.height;
-var width = positionInfo.width;
-var vectors;
-    drawnFlag = false,
-    prevX = 0,
-    currX = 0,
-    prevY = 0,
-    currY = 0;
-
-let running = false;
-var drawLineWidth = 2;
-
-var mouseInputs = [];
-var circleCenters = [];
-
-currT = 0;
 const defaultNumOfVectors = 5;
 const defaultTick = 30;
-let numVectInUse = defaultNumOfVectors;
-let approximation = [];
-breathing_room = width * .3;
-drawMode = true;
-centered = false;
-let timerId;
+const ctx = canvas.getContext("2d");
+const drawLineWidth = 2;
+
+
+function main() {
+    // initialize global variables
+    points = [];
+    var samples = [];
+    samples.push(PI_arr, squares_arr, summation_arr);
+    
+    for (let i = 0; i < samples.length; i++) {
+        points.push(new Points(samples[i]));
+    }
+
+    var positionInfo = canvas.getBoundingClientRect();
+    height = positionInfo.height;
+    width = positionInfo.width;
+
+}
+
+let points;
+
+var height;
+var width;
+var vectors;
+var mouseInputs = [];
+var currT = 0;
+var numVectInUse = defaultNumOfVectors;
+
+var approximation = [];
+var breathing_room = width * .3;
+var timerId;
+var running = false;
+
 
 let totalAvailableVectors;
 let transformation;
@@ -263,11 +567,12 @@ let clickBoxes = [];
 
 let sampleScreen = false;
 
-var camera = new Camera();
-const ctx = canvas.getContext("2d");
 let sampleChosen = -1;
 
+main();
 
+var drawScreen = new DrawScreen();
+var camera = new Camera(defaultTick);
 
 
 focusSlider = document.getElementById("range_focus_selector");
@@ -280,162 +585,41 @@ adjustNSlider.addEventListener("input", adjustNSliderListener);
 window.addEventListener('resize', scaleCanvas);
 window.addEventListener("load", loadListener);
 
-document.getElementById("btn_finished").addEventListener("click", finishedButtonListener);
-document.getElementById("btn_erase").addEventListener("click", eraseButtonListener);
 document.getElementById("btn_back").addEventListener("click", backButtonListener);
-document.getElementById("btn_samples").addEventListener("click", samplesButtonListener);
 document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
 
+function initSamples() {
+    var samples = [];
+    var p = [];
+
+    samples.push(PI_arr, squares_arr, summation_arr);
+    
+    
+    for (let i = 0; i < samples.length; i++) {
+        p.push(new Points(samples[i]));
+    }
+
+    return p;
+}
+
+
 function loadListener() {
-    initDrawMode();
+    drawScreen.initDrawMode();
     scaleCanvas();
-    console.log(positionInfo.width);
-}
-
-function samplesButtonListener() {
-    sampleScreen = true;
-    removeDrawMouseListeners();
-    initSampleScreen()
-
 }
 
 
 
-function initSampleScreen() {
-    console.log("init sample screen");
 
-    canvas.removeEventListener("click", selectSample);
-    sampleChosen = -1;
-
-    let size = .9;
-    let padding = .08 * Math.min(width, height);
-    let br = .03 * Math.min(width, height);
-
-    let swidth = width * size;
-    let sheight = height * size;
-    let zx = (width - swidth) / 2;
-    let zy = (height - sheight) / 2;
-
-    ctx.clearRect(zx, zy, swidth, sheight);
-    // draw "border"
-    ctx.strokeStyle = "#FFA500";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(zx, zy, swidth, sheight);
-
-    let sampleDim = (Math.min(width, height) - padding * 4) / 2;
-    console.log("Sampledim: " + sampleDim);
-
-    //PI
-
-   clickBoxes = [];
-
-    let p;
-    let xt, yt;
-    let col, row, index;
-    col = row = index = 0;
-
-    while (index < points.length) {
-        p = points[index];
-        p.updateAvailableArea(sampleDim, br);
-        xt = zx + (padding * (col + 1)) + (sampleDim * col);
-        yt = zy + (padding * (row + 1)) + (sampleDim * row);
-
-        ctx.fillStyle = "black";
-        // ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.moveTo(p.getPointX(0) + xt, p.getPointY(0) + yt);
-        for (let i = 0; i < p.getLength(); i++) {
-            ctx.beginPath();
-            ctx.arc(p.getPointX(i) + xt, p.getPointY(i) + yt, .5, 0, 2 * Math.PI, false);
-            ctx.fill();
-
-        }
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "green";
-        ctx.strokeRect(xt, yt, sampleDim, sampleDim);
-        clickBoxes.push([xt, yt, sampleDim]);
-
-        index++;
-        col++;
-        if (col % 2 == 0) {
-            col = 0;
-            row++;
-        }
-
-
-    }
-
-    canvas.addEventListener("click", selectSample);
-
-}
-
-function selectSample(e) {
-    console.log("Select sample attempt");
-    let x = getMousePos(canvas, e).x;
-    let y = getMousePos(canvas, e).y;
-
-    console.log("Clicked on Sample Screen: " + x + ", " + y);
-    console.log("click-boxes size: " + clickBoxes.length);
-    for (let i = 0; i < clickBoxes.length; i++) {
-        console.log(i + " | " + clickBoxes[i][0] + ", " + clickBoxes[i][1] + ", " + clickBoxes[i][2]);
-    }
-    let i = 0;
-    let clicked = -1;
-    for (; i < clickBoxes.length; i++) {
-        if (x > clickBoxes[i][0] && x < (clickBoxes[i][0] + clickBoxes[i][2]) && y > clickBoxes[i][1] && y < (clickBoxes[i][1] + clickBoxes[i][2])) {
-            clicked = i;
-            console.log("clicked " + i);
-            break;
-        }
-    }
-
-    if (clicked != -1) {
-        sampleChosen = clicked;
-        mouseInputs = [];
-        points[sampleChosen].updateAvailableArea(width, breathing_room);
-
-        for (let i = 0; i < points[sampleChosen].getLength(); i++) {
-            mouseInputs.push([points[sampleChosen].getPointX(i), points[sampleChosen].getPointY(i)]);
-        }
-
-        console.log("clicked sample - REMOVING click listener");
-        sampleScreen = false;
-        canvas.removeEventListener("click", selectSample);
-        finishedButtonListener();
-    }
-}
-
-function addDrawMouseListeners() {
-    canvas.addEventListener("mousemove", draw_mouseMove);
-    canvas.addEventListener("mousedown", draw_mouseDown);
-    canvas.addEventListener("mouseup", draw_mouseUp);
-}
-
-function removeDrawMouseListeners() {
-    canvas.removeEventListener("mousemove", draw_mouseMove);
-    canvas.removeEventListener("mousedown", draw_mouseDown);
-    canvas.removeEventListener("mouseup", draw_mouseUp);
-}
 
 function backButtonListener() {
     stopAnimationWrapper(timerId);
-    initDrawMode();
+    drawScreen.initDrawMode();
 }
-function finishedButtonListener() {
-    if (drawMode) {
-        drawMode = false;
-        initDisplayMode();
 
-        if (approxOnlyToggle) {
-            drawApproximation();
-        } else {
-            timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
-        }
-    } 
-  }
+
 
 function showGoalToggleListener() {
     goalShownToggle = this.checked;
@@ -527,12 +711,7 @@ function adjustNSliderListener() {
 }
 
 
-function eraseButtonListener() {
-        ctx.clearRect(0, 0, width, height);
-        mouseInputs = [];
-        drawDrawHere();
-        document.getElementById("btn_swap").disabled = true;
-}
+
 
 
 
@@ -564,47 +743,9 @@ function coordstoDraw(coords) {
     return toDraw;
 }
 
-function drawDrawHere() {
-    let text = "draw here!";
-    let size = "48";
-    ctx.font =  size + "px serif";
-    let w = ctx.measureText(text).width;
-    let x = (width - w) / 2;
-    let y = (height - parseInt(size)) / 2;
-    ctx.fillStyle = "rgb(130 151 184 / 50%)";
-    ctx.fillText(text, x, y);
-
-}
-
-function initDrawMode() {
-    drawMode = true;
-    mouseInputs = [];
-    sampleChosen = -1;
-    // canvas.removeEventListener("click", selectSample);
-
-    document.getElementById("draw_control_div").style.display="flex";
-    document.getElementById("draw_options_div").style.display="flex";
-
-    // document.getElementById("focus_div").style.display = "none";
-    // document.getElementById("adjust_n_div").style.display = "none";
-    // document.getElementById("circle_toggle_div").style.display = "none";
-    // document.getElementById("approx_toggle_div").style.display = "none";
 
 
-    document.getElementById("display_slider_div").style.display="none";
-    document.getElementById("display_toggle_div").style.display = "none";
-    document.getElementById("display_control_div").style.display="none";
 
-    document.getElementById("btn_finished").disabled = true;
-
-    scaleCanvas();
-
-    ctx.clearRect(0, 0, width, height);
-    drawDrawHere();
-
-    addDrawMouseListeners();
-
-}
 
 
 function initDisplayMode() {
@@ -625,7 +766,7 @@ function initDisplayMode() {
     document.getElementById("display_control_div").style.display="flex";
 
     
-    removeDrawMouseListeners();
+    drawScreen.removeDrawMouseListeners();
     scaleCanvas();
 
     // console.log("INITDISPLAYMODE: mouse inputs, PRE COORDINATE SHIFT " + mouseInputs.length + "\n\n ");
@@ -866,84 +1007,8 @@ function coordsToDrawY(y) {
         // return ((height / (2)) / 1) - y;
 }
 
-function draw() {
-    ctx.beginPath();
-    ctx.moveTo(prevX, prevY);
-    ctx.lineTo(currX, currY);
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = drawLineWidth;
-    ctx.stroke();
-    ctx.closePath();
-}
-
-function draw_mouseDown(e) {
-    if (!drawnFlag) {
-        ctx.clearRect(0, 0, width, height);
-        mouseInputs = [];
-        document.getElementById("btn_finished").disabled = false;
-
-    }
-    ctx.clearRect(0, 0, width, height);
-
-    prevX = currX;
-    prevY = currY;
-    currX = getMousePos(canvas, e).x;
-    currY = getMousePos(canvas, e).y;
-    drawnFlag = true;
-
-        ctx.beginPath();
-        ctx.fillStyle = "black";
-        ctx.fillRect(currX, currY, 2, 2);
-        ctx.closePath();
-        mouseInputs.push([currX, currY]);
-}
-
-function draw_mouseUp() {
-
-    if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
-        x = mouseInputs[0][0];
-        y = mouseInputs[0][1];
-        mouseInputs.push([mouseInputs[0][0], mouseInputs[0][1]]);
-        ctx.beginPath();
-        ctx.moveTo(currX, currY);
-        ctx.lineTo(mouseInputs[0][0], mouseInputs[0][1]);
-        ctx.stroke();
-    } else {
-        // manual reverse
-        let rev = [];
-        for (let i = 0; i < mouseInputs.length; i++) {
-            rev.push([mouseInputs[mouseInputs.length - 1 - i][0], mouseInputs[mouseInputs.length - 1 - i][1]]);
-        }
-        mouseInputs = mouseInputs.concat(rev);
-    }
 
 
-    drawnFlag = false;
-}
-
-function draw_mouseMove(e) {
-
-    if (drawnFlag) {
-        prevX = currX;
-        prevY = currY;
-        currX = getMousePos(canvas, e).x;
-        currY = getMousePos(canvas, e).y;
-        mouseInputs.push([currX, currY]);
-        draw();
-    }
-}
-
-/*
-RafalS https://stackoverflow.com/questions/17130395/real-mouse-position-in-canvas/33063222#33063222
-Oct 11, 2015
-*/
-function getMousePos(canvas, evt) {
-    var rect = canvas.getBoundingClientRect();
-    return {
-        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
-    };
-}
 
 function scaleCanvas() {
     let controls_container = document.getElementById("epi_controls_container");
@@ -974,9 +1039,9 @@ function scaleCanvas() {
 
     breathing_room = width * .3;
 
-    if (drawMode) { // redraw users rendition
+    if (drawScreen.getDrawMode()) { // redraw users rendition
         if (mouseInputs.length == 0) {
-            drawDrawHere();
+            drawScreen.drawDrawHere();
         } else {
             ctx.beginPath();
             ctx.moveTo(mouseInputs[0][0], mouseInputs[0][1]);
