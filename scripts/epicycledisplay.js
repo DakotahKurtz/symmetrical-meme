@@ -7,37 +7,59 @@ class DrawScreen {
     currX;
     currY;
     drawnFlag = false;
+    rawInputs;
+    mouseInputs;
+    sampleChosen;
+    sampleScreen;
+    clickBoxes;
+    points;
     #drawMode = false;
+
     
     constructor() {
         this.prevX = this.prevY = this.currX = this.currY = 0;
+        this.rawInputs = [];
+        this.mouseInputs = [];
+        this.sampleChosen = -1;
+        this.sampleScreen = false;
+
+        this.points = [];
+        var samples = [];
+        samples.push(PI_arr, squares_arr, summation_arr, test_arr);
+        
+        for (let i = 0; i < samples.length; i++) {
+            this.points.push(new Points(samples[i]));
+        }
+
         document.getElementById("btn_finished").addEventListener("click", this.finishedButtonListener);
         document.getElementById("btn_erase").addEventListener("click", this.eraseButtonListener);
         document.getElementById("btn_samples").addEventListener("click", this.samplesButtonListener);
     }
 
     samplesButtonListener() {
-        sampleScreen = true;
+        drawScreen.sampleScreen = true;
         drawScreen.removeDrawMouseListeners();
         drawScreen.initSampleScreen()
     }
 
     finishedButtonListener() {
-        if (drawScreen.getDrawMode()) {
-            drawScreen.setDrawMode(false);
-            initDisplayMode();
+
+        drawScreen.setDrawMode(false);
+        // scaledInputs = canvasToCoords(drawScreen.getInputs());
+
+        displayScreen.init();
     
-            if (approxOnlyToggle) {
-                drawApproximation();
-            } else {
-                timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
-            }
-        } 
+        if (displayScreen.approxOnlyToggle) {
+            displayScreen.drawApproximation();
+        } else {
+            displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
+        }
+        
       }
 
     eraseButtonListener() {
         ctx.clearRect(0, 0, width, height);
-        mouseInputs = [];
+        drawScreen.mouseInputs = [];
         drawScreen.drawDrawHere();
         document.getElementById("btn_finished").disabled = true;
     }
@@ -46,7 +68,7 @@ class DrawScreen {
         console.log("init sample screen");
         canvas.removeEventListener("click", this.selectSample);
     
-        sampleChosen = -1;
+        this.sampleChosen = -1;
     
         let size = .9;
         let padding = .08 * Math.min(width, height);
@@ -66,15 +88,15 @@ class DrawScreen {
         let sampleDim = (Math.min(width, height) - padding * 4) / 2;
         console.log("Sampledim: " + sampleDim);
     
-       clickBoxes = [];
+       this.clickBoxes = [];
     
         let p;
         let xt, yt;
         let col, row, index;
         col = row = index = 0;
     
-        while (index < points.length) {
-            p = points[index];
+        while (index < this.points.length) {
+            p = this.points[index];
             p.updateAvailableArea(sampleDim, br);
             xt = zx + (padding * (col + 1)) + (sampleDim * col);
             yt = zy + (padding * (row + 1)) + (sampleDim * row);
@@ -94,7 +116,7 @@ class DrawScreen {
             ctx.lineWidth = 3;
             ctx.strokeStyle = "green";
             ctx.strokeRect(xt, yt, sampleDim, sampleDim);
-            clickBoxes.push([xt, yt, sampleDim]);
+            this.clickBoxes.push([xt, yt, sampleDim]);
     
             index++;
             col++;
@@ -118,7 +140,7 @@ class DrawScreen {
         ctx.lineTo(zx + backArrowInc, zy + (backArrowInc * 4));
         ctx.stroke();
     
-        clickBoxes.push([zx, zy, (backArrowInc * 7)]);
+        this.clickBoxes.push([zx, zy, (backArrowInc * 7)]);
     
         canvas.addEventListener("click", this.selectSample);
     
@@ -130,14 +152,14 @@ class DrawScreen {
         let y = DrawScreen.getMousePos(canvas, e).y;
     
         console.log("Clicked on Sample Screen: " + x + ", " + y);
-        console.log("click-boxes size: " + clickBoxes.length);
-        for (let i = 0; i < clickBoxes.length; i++) {
-            console.log(i + " | " + clickBoxes[i][0] + ", " + clickBoxes[i][1] + ", " + clickBoxes[i][2]);
+        console.log("click-boxes size: " + drawScreen.clickBoxes.length);
+        for (let i = 0; i < drawScreen.clickBoxes.length; i++) {
+            console.log(i + " | " + drawScreen.clickBoxes[i][0] + ", " + drawScreen.clickBoxes[i][1] + ", " + drawScreen.clickBoxes[i][2]);
         }
         let i = 0;
         let clicked = -1;
-        for (; i < clickBoxes.length; i++) {
-            if (x > clickBoxes[i][0] && x < (clickBoxes[i][0] + clickBoxes[i][2]) && y > clickBoxes[i][1] && y < (clickBoxes[i][1] + clickBoxes[i][2])) {
+        for (; i < drawScreen.clickBoxes.length; i++) {
+            if (x > drawScreen.clickBoxes[i][0] && x < (drawScreen.clickBoxes[i][0] + drawScreen.clickBoxes[i][2]) && y > drawScreen.clickBoxes[i][1] && y < (drawScreen.clickBoxes[i][1] + drawScreen.clickBoxes[i][2])) {
                 clicked = i;
                 console.log("clicked " + i);
                 break;
@@ -145,26 +167,26 @@ class DrawScreen {
         }
     
         if (clicked != -1) {
-            if (clicked < points.length) {
-                sampleChosen = clicked;
-                mouseInputs = [];
-                points[sampleChosen].updateAvailableArea(width, breathing_room);
+            if (clicked < drawScreen.points.length) {
+                drawScreen.sampleChosen = clicked;
+                drawScreen.rawInputs = [];
+                drawScreen.points[drawScreen.sampleChosen].updateAvailableArea(width, breathing_room);
     
-                for (let i = 0; i < points[sampleChosen].getLength(); i++) {
-                    mouseInputs.push([points[sampleChosen].getPointX(i), points[sampleChosen].getPointY(i)]);
+                for (let i = 0; i < drawScreen.points[drawScreen.sampleChosen].getLength(); i++) {
+                    drawScreen.rawInputs.push([drawScreen.points[drawScreen.sampleChosen].getPointX(i), drawScreen.points[drawScreen.sampleChosen].getPointY(i)]);
                 }
     
                 console.log("clicked sample - REMOVING click listener");
-                sampleScreen = false;
-                canvas.removeEventListener("click", this.selectSample);
+                drawScreen.sampleScreen = false;
+                canvas.removeEventListener("click", drawScreen.selectSample);
                 drawScreen.finishedButtonListener();
             }
             else {
                 switch (clicked) {
-                    case points.length:
+                    case drawScreen.points.length:
                         console.log("clicked sample - REMOVING click listener");
-                        sampleScreen = false;
-                        canvas.removeEventListener("click", this.selectSample);
+                        drawScreen.sampleScreen = false;
+                        canvas.removeEventListener("click", drawScreen.selectSample);
                         drawScreen.initDrawMode();
                 }
             }
@@ -176,8 +198,8 @@ class DrawScreen {
         this.drawnFlag = false;
 
         camera.reset();
-        mouseInputs = [];
-        sampleChosen = -1;
+        this.mouseInputs = [];
+        this.sampleChosen = -1;
     
         document.getElementById("draw_control_div").style.display="flex";
         document.getElementById("draw_options_div").style.display="flex";
@@ -191,7 +213,6 @@ class DrawScreen {
     
         ctx.clearRect(0, 0, width, height);
         this.drawDrawHere();
-        console.log("Mouseinput Length: " + mouseInputs.length);
         drawScreen.addDrawMouseListeners();
     }
 
@@ -224,7 +245,7 @@ class DrawScreen {
     draw_mouseDown(e) {
         if (!this.drawnFlag) {
             ctx.clearRect(0, 0, width, height);
-            mouseInputs = [];
+            drawScreen.mouseInputs = [];
             document.getElementById("btn_finished").disabled = false;
         }
 
@@ -240,15 +261,15 @@ class DrawScreen {
             ctx.fillStyle = "black";
             ctx.fillRect(this.currX, this.currY, 2, 2);
             ctx.closePath();
-            mouseInputs.push([this.currX, this.currY]);
+            drawScreen.mouseInputs.push([this.currX, this.currY]);
     }
     
     draw_mouseUp() {
     
         if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
-            let x = mouseInputs[0][0];
-            let y = mouseInputs[0][1];
-            mouseInputs.push([x,y]);
+            let x = drawScreen.mouseInputs[0][0];
+            let y = drawScreen.mouseInputs[0][1];
+            drawScreen.mouseInputs.push([x,y]);
             ctx.beginPath();
             ctx.moveTo(this.currX, this.currY);
             ctx.lineTo(x,y);
@@ -256,10 +277,10 @@ class DrawScreen {
         } else {
             // manual reverse
             let rev = [];
-            for (let i = 0; i < mouseInputs.length; i++) {
-                rev.push([mouseInputs[mouseInputs.length - 1 - i][0], mouseInputs[mouseInputs.length - 1 - i][1]]);
+            for (let i = 0; i < drawScreen.mouseInputs.length; i++) {
+                rev.push([drawScreen.mouseInputs[drawScreen.mouseInputs.length - 1 - i][0], drawScreen.mouseInputs[drawScreen.mouseInputs.length - 1 - i][1]]);
             }
-            mouseInputs = mouseInputs.concat(rev);
+            drawScreen.mouseInputs = drawScreen.mouseInputs.concat(rev);
         }
     
     
@@ -273,7 +294,7 @@ class DrawScreen {
             this.prevY = this.currY;
             this.currX = DrawScreen.getMousePos(canvas, e).x;
             this.currY = DrawScreen.getMousePos(canvas, e).y;
-            mouseInputs.push([this.currX, this.currY]);
+            drawScreen.mouseInputs.push([this.currX, this.currY]);
 
             ctx.beginPath();
             ctx.moveTo(this.prevX, this.prevY);
@@ -300,6 +321,14 @@ class DrawScreen {
 
     getDrawMode(){return this.#drawMode;}
     setDrawMode(b){this.#drawMode = b;}
+    getInputs() {
+        if (this.sampleChosen == -1) {
+            return this.mouseInputs;
+        } else {
+            return this.rawInputs;
+        }
+    }
+    getMouseInputs(){return this.mouseInputs;}
 }
 
 class Points {
@@ -483,16 +512,16 @@ class Camera {
 
         if (this.#focusedOn == 0) {
             this.#tickRate = defaultTick;
-            stopAnimationWrapper(timerId);
-            timerId = startAnimationWrapper(drawEpicycles, this.#tickRate);
+            stopAnimationWrapper(displayScreen.timerId);
+            displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
             return;
         }
         let tRate = this.#tickRate * (this.#zoom / previousZoom);
 
         if (this.#withinRateRange(tRate)) {
             this.#tickRate = tRate;
-            stopAnimationWrapper(timerId);
-            timerId = startAnimationWrapper(drawEpicycles, this.#tickRate);
+            stopAnimationWrapper(displayScreen.timerId);
+            displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
         }
     }
 
@@ -518,22 +547,289 @@ class Camera {
     setTickRate(tickRate) {this.#tickRate = tickRate;} 
 }
 
+class DisplayScreen {
+
+    approximation;
+    numVectInUse;
+    currT;
+    vectors;
+    breathing_room;
+    timerId;
+    running;
+    transformation;
+    circleShownToggle;
+    goalShownToggle;
+    approxOnlyToggle;
+    scaledInputs;
+
+    constructor() {
+        this.circleShownToggle = true;
+        this.goalShownToggle = true;
+        this.approxOnlyToggle = false;
+    }
+
+    init() {
+        this.approximation = [];
+        this.numVectInUse = defaultNumOfVectors;
+        this.currT = 0;
+        this.vectors = [];
+        this.scaledInputs = [];
+        this.breathing_room = width * .3;
+        this.running = false;
+        
+        document.getElementById("draw_control_div").style.display="none";
+        document.getElementById("draw_options_div").style.display="none";
+    
+        document.getElementById("display_slider_div").style.display ="flex";
+        document.getElementById("display_toggle_div").style.display = "flex";
+        document.getElementById("display_control_div").style.display="flex";
+    
+        drawScreen.removeDrawMouseListeners();
+        scaleCanvas();
+        camera.reset();
+
+        this.scaledInputs = this.canvasToCoords(drawScreen.getInputs());
+
+        var minX, minY, maxX, maxY;
+        minX = minY = Number.MAX_VALUE;
+        maxX = maxY = Number.MIN_VALUE;
+    
+        for (let i = 0; i < this.scaledInputs.length; i++) {
+            minX = Math.min(minX, this.scaledInputs[i][0]);
+            minY = Math.min(minY, this.scaledInputs[i][1]);
+            maxX = Math.max(maxX, this.scaledInputs[i][0]);
+            maxY = Math.max(maxY, this.scaledInputs[i][1]);
+        }
+    
+        this.transformation = new Transformation(this.scaledInputs);
+        adjustNSlider.max = Math.min(this.transformation.vectors.length, maxNumberOfVectors);
+        this.numVectInUse = Math.min(this.transformation.vectors.length, defaultNumOfVectors);
+        adjustNSlider.value = this.numVectInUse;
+        focusSlider.max = this.numVectInUse - 1;
+        focusSlider.value = 0;
+        this.vectors = this.transformation.getVectors(this.numVectInUse);
+
+    }
+
+    drawApproximation() {
+        ctx.clearRect(0, 0, width, height);
+        let approx = [];
+        let endPoints = [];
+        let t = 0;
+    
+        while (t <= (2*Math.PI + tInc)) {
+            endPoints = this.getVectorEndpoints(t);
+            approx.push([endPoints[endPoints.length - 1][0], endPoints[endPoints.length - 1][1]]);
+            t += tInc;
+        }
+    
+        this.drawGoal();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#aaffd3";
+        ctx.setLineDash([]);
+    
+        ctx.beginPath();
+        ctx.moveTo(coordsToDrawX(approx[0][0]), coordsToDrawY(approx[0][1]));
+    
+        for (let i = 1; i < approx.length; i++) {
+    
+            ctx.lineTo(coordsToDrawX(approx[i][0]), coordsToDrawY(approx[i][1]));
+        }
+        ctx.stroke();
+    
+        this.drawNumVectors();
+    }
+    
+    drawEpicycles() { 
+    
+        ctx.clearRect(0, 0, width, height);
+    
+        displayScreen.drawGoal();
+    
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#000000";
+        ctx.setLineDash([]);
+    
+    
+        // calculate the centers of every circle
+        let circleCenters = displayScreen.getVectorEndpoints(displayScreen.currT);
+    
+    
+    
+    
+        if (camera.getFocusedOn() != 0) {
+            camera.center(circleCenters[camera.getFocusedOn() - 1][0] + (width / 2), (height / 2) - circleCenters[camera.getFocusedOn() - 1][1]);
+        }
+    
+        if (displayScreen.circleShownToggle) {
+            ctx.beginPath();
+            ctx.arc(displayScreen.coordsToDrawX(0), displayScreen.coordsToDrawY(0), displayScreen.scale(displayScreen.vectors[0].radius), 0, 2*Math.PI, true);
+            ctx.stroke();
+    
+            // draw each circle
+            for (let i = 1; i < displayScreen.numVectInUse; i++) {
+                if (i == camera.getFocusedOn()) {
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "#ffabaa";
+                }
+                else if (i < camera.getFocusedOn() && camera.getFocusedOn() != 0) {
+                    ctx.strokeStyle = "rgb(70 70 70 / 20%)";
+                    ctx.lineWidth = 1;
+                } else {
+                    ctx.strokeStyle = "rgb(70 70 70)";
+                    ctx.lineWidth = 1;
+                }
+                ctx.beginPath();
+                ctx.arc(displayScreen.coordsToDrawX(circleCenters[i-1][0]), displayScreen.coordsToDrawY(circleCenters[i-1][1]), displayScreen.scale(displayScreen.vectors[i].radius), 0, 2*Math.PI, true);
+                ctx.stroke();
+            }
+        }
+    
+        // draw radial lines for each circle
+        ctx.strokeStyle = "#82b2ff";
+        ctx.beginPath();
+        ctx.moveTo(displayScreen.coordsToDrawX(0), displayScreen.coordsToDrawY(0));
+    
+        for (let i = 0; i < displayScreen.numVectInUse; i++) {
+            ctx.lineTo(displayScreen.coordsToDrawX(circleCenters[i][0]), displayScreen.coordsToDrawY(circleCenters[i][1]));
+        }
+        ctx.stroke();
+    
+        // add final value of fourier transform at currT
+        displayScreen.approximation.push([circleCenters[displayScreen.numVectInUse - 1][0], circleCenters[displayScreen.numVectInUse-1][1]]);
+    
+        if (displayScreen.currT > (Math.PI * 2) + .1) {
+            displayScreen.approximation.shift();
+        }
+    
+        // draw actual approximation
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#aaffd3";
+        ctx.beginPath(displayScreen.coordsToDrawX(displayScreen.approximation[0][0]), displayScreen.coordsToDrawY(displayScreen.approximation[0][1]));
+    
+        for (let i = 1; i < displayScreen.approximation.length; i++) {
+            ctx.lineTo(displayScreen.coordsToDrawX(displayScreen.approximation[i][0]), displayScreen.coordsToDrawY(displayScreen.approximation[i][1]));
+        }
+        ctx.stroke();
+    
+        // draw circle showing current x,y value of fourier transform at currT
+        ctx.fillStyle = "#32fa92";
+        ctx.beginPath();
+        ctx.arc(displayScreen.coordsToDrawX(circleCenters[circleCenters.length - 1][0]), displayScreen.coordsToDrawY(circleCenters[circleCenters.length - 1][1]), 5, 0, 2*Math.PI, true);
+        ctx.fill();
+    
+        displayScreen.drawNumVectors();
+    
+        displayScreen.currT += tInc;
+    }
+    
+    drawNumVectors() {
+        ctx.font = "48px serif";
+        ctx.strokeText(this.numVectInUse, (width * .8), (height * .95));
+    }
+    
+    drawGoal() {
+        if (!this.goalShownToggle) {
+            return;
+        }
+    
+        ctx.fillStyle = "rgb(86 98 102 / 50%)";
+    
+        for (let i = 0; i < this.scaledInputs.length; i++) {
+            ctx.beginPath();
+    
+            let x = this.coordsToDrawX(this.scaledInputs[i][0]);
+            let y = this.coordsToDrawY(this.scaledInputs[i][1]);
+            ctx.arc(x, y, 1, 0, 2*Math.PI, false);
+            ctx.fill();
+        }
+    }
+    
+    getCoords(currT) {
+        let coords = [];
+        let x = this.vectors[0].radius * Math.cos(this.currT * this.vectors[0].scaledIndex + this.vectors[0].offset);
+        let y = this.vectors[0].radius * Math.sin(this.currT * this.vectors[0].scaledIndex + this.vectors[0].offset);
+        coords.push([x, y]);
+    
+        for (let i = 1; i < this.numVectInUse; i++) {
+            x = coords[i - 1][0] + this.vectors[i].radius * Math.cos(this.currT * this.vectors[i].scaledIndex + this.vectors[i].offset);
+            y = coords[i - 1][1] + this.vectors[i].radius * Math.sin(this.currT * this.vectors[i].scaledIndex + this.vectors[i].offset);
+            
+            coords.push([x, y]);
+        }
+    
+        return coords;
+    }
+    
+    getVectorEndpoints(time) {
+        let endpoints = [];
+        let x, y;
+        for (let i = 0; i < this.numVectInUse; i++) {
+            if (i == 0) {
+                x = this.vectors[0].radius * Math.cos(time * this.vectors[0].scaledIndex + this.vectors[0].offset);
+                y = this.vectors[0].radius * Math.sin(time * this.vectors[0].scaledIndex + this.vectors[0].offset);
+                endpoints.push([x, y]);
+            } else {
+                
+                x = endpoints[i - 1][0] + this.vectors[i].radius * Math.cos(time * this.vectors[i].scaledIndex + this.vectors[i].offset);
+                y = endpoints[i - 1][1] + this.vectors[i].radius * Math.sin(time * this.vectors[i].scaledIndex + this.vectors[i].offset);
+    
+                endpoints.push([x, y]);
+            }
+        } 
+        return endpoints;
+    }
+    
+    scale(radius) {
+        return radius * camera.getZoom();
+    }
+    
+    
+    
+    coordsToDrawX(x) {
+    let coord = x + ((width / (2)));
+    
+            return coord * camera.getZoom() + camera.getTx();
+        
+    }
+    
+    coordsToDrawY(y) {
+        let coord = (height / 2) - y;
+        return coord * camera.getZoom()+ camera.getTy();
+            // return ((height / (2)) / 1) - y;
+    }
+
+    canvasToCoords(inputs) {
+        let scaled = [];
+        let x, y;
+        for (let i = 0; i < inputs.length; i++) {
+            x = inputs[i][0];
+            y = inputs[i][1];
+            x -= (width / 2);
+            y = (height / 2) - y;
+    
+    
+            scaled.push([x, y]);
+        }
+        return scaled;
+    }
+    
+
+
+
+}
+
 const canvas = document.getElementById("canvas_interactive");
 const defaultNumOfVectors = 5;
 const defaultTick = 30;
 const ctx = canvas.getContext("2d");
 const drawLineWidth = 2;
-
+const tInc = .03;
+const maxNumberOfVectors = 300;
 
 function main() {
     // initialize global variables
-    points = [];
-    var samples = [];
-    samples.push(PI_arr, squares_arr, summation_arr);
-    
-    for (let i = 0; i < samples.length; i++) {
-        points.push(new Points(samples[i]));
-    }
+
 
     var positionInfo = canvas.getBoundingClientRect();
     height = positionInfo.height;
@@ -541,38 +837,17 @@ function main() {
 
 }
 
-let points;
 
 var height;
 var width;
-var vectors;
-var mouseInputs = [];
-var currT = 0;
-var numVectInUse = defaultNumOfVectors;
-
-var approximation = [];
-var breathing_room = width * .3;
-var timerId;
-var running = false;
 
 
-let totalAvailableVectors;
-let transformation;
-let circleShownToggle = true;
-let goalShownToggle = true;
-let approxOnlyToggle = false;
-let tInc = .03;
-let maxNumberOfVectors = 300;
-let clickBoxes = [];
-
-let sampleScreen = false;
-
-let sampleChosen = -1;
 
 main();
 
 var drawScreen = new DrawScreen();
 var camera = new Camera(defaultTick);
+var displayScreen = new DisplayScreen();
 
 
 focusSlider = document.getElementById("range_focus_selector");
@@ -590,57 +865,39 @@ document.getElementById("show_goal_toggle").addEventListener('change', showGoalT
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
 
-function initSamples() {
-    var samples = [];
-    var p = [];
-
-    samples.push(PI_arr, squares_arr, summation_arr);
-    
-    
-    for (let i = 0; i < samples.length; i++) {
-        p.push(new Points(samples[i]));
-    }
-
-    return p;
-}
-
 
 function loadListener() {
     drawScreen.initDrawMode();
     scaleCanvas();
 }
 
-
-
-
-
 function backButtonListener() {
-    stopAnimationWrapper(timerId);
+    stopAnimationWrapper(displayScreen.timerId);
     drawScreen.initDrawMode();
 }
 
 
 
 function showGoalToggleListener() {
-    goalShownToggle = this.checked;
+    displayScreen.goalShownToggle = this.checked;
 
-    if (approxOnlyToggle) {
-        drawApproximation();
+    if (displayScreen.approxOnlyToggle) {
+        displayScreen.drawApproximation();
     }
 }
 
 function approxOnlyToggleListener() {
-    approxOnlyToggle = this.checked;
+    displayScreen.approxOnlyToggle = this.checked;
 
-    if (approxOnlyToggle) {
-        stopAnimationWrapper(timerId);
+    if (displayScreen.approxOnlyToggle) {
+        stopAnimationWrapper(displayScreen.timerId);
         camera.save();
         camera.reset();
 
         document.getElementById("range_focus_selector").disabled = true;
         drawApproximation();
     } else {
-        stopAnimationWrapper(timerId);
+        stopAnimationWrapper(displayScreen.timerId);
 
         document.getElementById("range_focus_selector").disabled = false;
         camera.load();
@@ -655,7 +912,7 @@ function approxOnlyToggleListener() {
         }
 
         focusSlider.max = (numVectInUse - 1);
-        timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
+        displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 }
 
@@ -665,21 +922,23 @@ function focusSliderListener() {
     // timerId = setInterval(drawEpicycles, camera.tickRate);
 
     camera.zoomTo(focusSlider.value);
+    console.log("focused on: " + camera.getFocusedOn() + " | focusSlider value: " + (focusSlider.value));
+
 }
 
 function startAnimationWrapper(fx, tRate) {
     
-    if (!running) {
-        running = true;
+    if (!displayScreen.running) {
+        displayScreen.running = true;
         t = setInterval(fx, tRate);
         return t;
     }
-    return timerId;
+    return displayScreen.timerId;
 }
 
 function stopAnimationWrapper(t) {
     clearInterval(t);
-    running = false;
+    displayScreen.running = false;
 }
 
 function adjustNSliderListener() {
@@ -689,14 +948,15 @@ function adjustNSliderListener() {
         drawApproximation();
     } else {
 
-        stopAnimationWrapper(timerId);
+        stopAnimationWrapper(displayScreen.timerId);
 
         numVectInUse = adjustNSlider.value;
         vectors = transformation.getVectors(numVectInUse);
-        console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
+
         focusSlider.max = numVectInUse - 1;
 
-        if (focusSlider.value >= numVectInUse) {
+        if (focusSlider.value >= (numVectInUse - 1)) {
+            console.log("HERE");
             focusSlider.value = (numVectInUse - 1);
 
             camera.zoomTo(numVectInUse - 1);
@@ -704,7 +964,9 @@ function adjustNSliderListener() {
             focusSlider.max = (numVectInUse - 1);
 
         }
-        timerId = startAnimationWrapper(drawEpicycles, camera.getTickRate());
+        console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
+        console.log("focused on: " + camera.getFocusedOn() + " | focusSlider value: " + (focusSlider.value));
+        displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 
 
@@ -715,297 +977,16 @@ function adjustNSliderListener() {
 
 
 
-function canvasToCoords(inputs) {
-    let scaled = [];
-    let x, y;
-    for (let i = 0; i < inputs.length; i++) {
-        x = inputs[i][0];
-        y = inputs[i][1];
-        x -= (width / 2);
-        y = (height / 2) - y;
 
 
-        scaled.push([x, y]);
-    }
-    return scaled;
-}
 
-function coordstoDraw(coords) {
-    let toDraw = [];
-    let x, y;
 
-    for (let i = 0; i < coords.length; i++) {
-        x = (coords[i][0] + (width / 2)) * camera.getZoom() + camera.getTx();
-        y = ((height / 2) - coords[i][1]) * camera.getZoom() + camera.getTy();
-        toDraw.push([x, y]);
-    }
 
-    return toDraw;
-}
 
 
 
 
 
-
-function initDisplayMode() {
-    ctx.clearRect(0, 0, width, height);
-    camera.reset();
-
-    approximation = [];
-    currT = 0;
-    document.getElementById("draw_control_div").style.display="none";
-    document.getElementById("draw_options_div").style.display="none";
-    // document.getElementById("focus_div").style.display = "block";
-    // document.getElementById("adjust_n_div").style.display = "block";
-    // document.getElementById("circle_toggle_div").style.display = "block";
-    // document.getElementById("approx_toggle_div").style.display = "block";
-
-    document.getElementById("display_slider_div").style.display ="flex";
-    document.getElementById("display_toggle_div").style.display = "flex";
-    document.getElementById("display_control_div").style.display="flex";
-
-    
-    drawScreen.removeDrawMouseListeners();
-    scaleCanvas();
-
-    // console.log("INITDISPLAYMODE: mouse inputs, PRE COORDINATE SHIFT " + mouseInputs.length + "\n\n ");
-    // for (let i = 0; i < mouseInputs.length; i++) {
-    //     console.log("x, y: " + mouseInputs[i][0] + ", " + mouseInputs[i][1]);
-    // }
-
-    let scaledInputs = canvasToCoords(mouseInputs);
-    mouseInputs = scaledInputs;
-
-    // console.log("INITDISPLAYMODE: mouse inputs "+ mouseInputs.length + "\n\n ");
-    // for (let i = 0; i < mouseInputs.length; i++) {
-    //     console.log("x, y: " + mouseInputs[i][0] + ", " + mouseInputs[i][1]);
-    // }
-
-    minX = minY = Number.MAX_VALUE;
-    maxX = maxY = Number.MIN_VALUE;
-    vectors = [];
-
-    for (let i = 0; i < scaledInputs.length; i++) {
-        minX = Math.min(minX, scaledInputs[i][0]);
-        minY = Math.min(minY, scaledInputs[i][1]);
-        maxX = Math.max(maxX, scaledInputs[i][0]);
-        maxY = Math.max(maxY, scaledInputs[i][1]);
-    }
-
-
-
-
-    transformation = new Transformation(scaledInputs);
-    console.log("total available vectors = " + transformation.vectors.length);
-    totalAvailableVectors = transformation.vectors.length;
-    adjustNSlider.max = Math.min(totalAvailableVectors, maxNumberOfVectors);
-    numVectInUse = Math.min(totalAvailableVectors, defaultNumOfVectors);
-    adjustNSlider.value = numVectInUse;
-    focusSlider.max = numVectInUse - 1;
-    focusSlider.value = 0;
-    vectors = transformation.getVectors(numVectInUse);
-}
-
-function drawApproximation() {
-    ctx.clearRect(0, 0, width, height);
-    let approx = [];
-    let endPoints = [];
-    let t = 0;
-
-    while (t <= (2*Math.PI + tInc)) {
-        endPoints = getVectorEndpoints(t);
-        approx.push([endPoints[endPoints.length - 1][0], endPoints[endPoints.length - 1][1]]);
-        t += tInc;
-    }
-
-    drawGoal();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#aaffd3";
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.moveTo(coordsToDrawX(approx[0][0]), coordsToDrawY(approx[0][1]));
-
-    for (let i = 1; i < approx.length; i++) {
-
-        ctx.lineTo(coordsToDrawX(approx[i][0]), coordsToDrawY(approx[i][1]));
-    }
-    ctx.stroke();
-
-    drawNumVectors();
-}
-
-function drawEpicycles() { 
-
-    ctx.clearRect(0, 0, width, height);
-
-    drawGoal();
-
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#000000";
-    ctx.setLineDash([]);
-
-
-    // calculate the centers of every circle
-    let circleCenters = getVectorEndpoints(currT);
-
-
-
-
-    if (camera.getFocusedOn() != 0) {
-        camera.center(circleCenters[camera.getFocusedOn() - 1][0] + (width / 2), (height / 2) - circleCenters[camera.getFocusedOn() - 1][1]);
-    }
-
-    if (circleShownToggle) {
-        ctx.beginPath();
-        ctx.arc(coordsToDrawX(0), coordsToDrawY(0), scale(vectors[0].radius), 0, 2*Math.PI, true);
-        ctx.stroke();
-
-        // draw each circle
-        for (let i = 1; i < numVectInUse; i++) {
-            if (i == camera.focusedOn) {
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = "#ffabaa";
-            }
-            else if (i < camera.focusedOn && camera.focusedOn != 0) {
-                ctx.strokeStyle = "rgb(70 70 70 / 20%)";
-                ctx.lineWidth = 1;
-            } else {
-                ctx.strokeStyle = "rgb(70 70 70)";
-                ctx.lineWidth = 1;
-            }
-            ctx.beginPath();
-            ctx.arc(coordsToDrawX(circleCenters[i-1][0]), coordsToDrawY(circleCenters[i-1][1]), scale(vectors[i].radius), 0, 2*Math.PI, true);
-            ctx.stroke();
-        }
-    }
-
-    // draw radial lines for each circle
-    ctx.strokeStyle = "#82b2ff";
-    ctx.beginPath();
-    ctx.moveTo(coordsToDrawX(0), coordsToDrawY(0));
-
-    for (let i = 0; i < numVectInUse; i++) {
-        ctx.lineTo(coordsToDrawX(circleCenters[i][0]), coordsToDrawY(circleCenters[i][1]));
-    }
-    ctx.stroke();
-
-    // add final value of fourier transform at currT
-    approximation.push([circleCenters[numVectInUse - 1][0], circleCenters[numVectInUse-1][1]]);
-
-    if (currT > (Math.PI * 2) + .1) {
-        approximation.shift();
-    }
-
-    // draw actual approximation
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#aaffd3";
-    ctx.beginPath(coordsToDrawX(approximation[0][0]), coordsToDrawY(approximation[0][1]));
-
-    for (let i = 1; i < approximation.length; i++) {
-        ctx.lineTo(coordsToDrawX(approximation[i][0]), coordsToDrawY(approximation[i][1]));
-    }
-    ctx.stroke();
-
-    // draw circle showing current x,y value of fourier transform at currT
-    ctx.fillStyle = "#32fa92";
-    ctx.beginPath();
-    ctx.arc(coordsToDrawX(circleCenters[circleCenters.length - 1][0]), coordsToDrawY(circleCenters[circleCenters.length - 1][1]), 5, 0, 2*Math.PI, true);
-    ctx.fill();
-
-    drawNumVectors();
-
-    currT += tInc;
-}
-
-function drawNumVectors() {
-    ctx.font = "48px serif";
-    ctx.strokeText(numVectInUse, (width * .8), (height * .95));
-}
-
-function drawGoal() {
-    if (!goalShownToggle) {
-        return;
-    }
-    // let dashSpace = document.getElementById("closed_form_toggle").checked ? 2 : 6;
-    // ctx.setLineDash([4, dashSpace]);
-    // ctx.lineWidth = 1;
-    ctx.fillStyle = "rgb(86 98 102 / 50%)";
-    // ctx.moveTo(coordsToDrawX(mouseInputs[0][0]), coordsToDrawY(mouseInputs[0][1]));
-    
-    // if (currT == 0) {
-    //         console.log("\n\n " + mouseInputs.length);
-
-    // }
-
-    for (let i = 0; i < mouseInputs.length; i++) {
-        ctx.beginPath();
-
-        let x = coordsToDrawX(mouseInputs[i][0]);
-        let y = coordsToDrawY(mouseInputs[i][1]);
-        ctx.arc(x, y, 1, 0, 2*Math.PI, false);
-        ctx.fill();
-
-        // if (currT == 0) {
-        //     console.log("Draw Goal: " + mouseInputs[i][0] + ", " + mouseInputs[i][1] + " -> | " + x + ", " + y);
-        // }
-    }
-}
-
-function getCoords(currT) {
-    let coords = [];
-    let x = vectors[0].radius * Math.cos(currT * vectors[0].scaledIndex + vectors[0].offset);
-    let y = vectors[0].radius * Math.sin(currT * vectors[0].scaledIndex + vectors[0].offset);
-    coords.push([x, y]);
-
-    for (let i = 1; i < numVectInUse; i++) {
-        x = coords[i - 1][0] + vectors[i].radius * Math.cos(currT * vectors[i].scaledIndex + vectors[i].offset);
-        y = coords[i - 1][1] + vectors[i].radius * Math.sin(currT * vectors[i].scaledIndex + vectors[i].offset);
-        
-        coords.push([x, y]);
-    }
-
-    return coords;
-}
-
-function getVectorEndpoints(time) {
-    let endpoints = [];
-
-    for (let i = 0; i < numVectInUse; i++) {
-        if (i == 0) {
-            let x = vectors[0].radius * Math.cos(time * vectors[0].scaledIndex + vectors[0].offset);
-            let y = vectors[0].radius * Math.sin(time * vectors[0].scaledIndex + vectors[0].offset);
-            endpoints.push([x, y]);
-        } else {
-            
-            x = endpoints[i - 1][0] + vectors[i].radius * Math.cos(time * vectors[i].scaledIndex + vectors[i].offset);
-            y = endpoints[i - 1][1] + vectors[i].radius * Math.sin(time * vectors[i].scaledIndex + vectors[i].offset);
-
-            endpoints.push([x, y]);
-        }
-    } 
-    return endpoints;
-}
-
-function scale(radius) {
-    return radius * camera.getZoom();
-}
-
-
-
-function coordsToDrawX(x) {
-let coord = x + ((width / (2)));
-
-        return coord * camera.getZoom() + camera.getTx();
-    
-}
-
-function coordsToDrawY(y) {
-    let coord = (height / 2) - y;
-    return coord * camera.getZoom()+ camera.getTy();
-        // return ((height / (2)) / 1) - y;
-}
 
 
 
@@ -1040,26 +1021,40 @@ function scaleCanvas() {
     breathing_room = width * .3;
 
     if (drawScreen.getDrawMode()) { // redraw users rendition
-        if (mouseInputs.length == 0) {
+        let inputs = drawScreen.getInputs();
+
+        if (inputs.length == 0) {
             drawScreen.drawDrawHere();
         } else {
             ctx.beginPath();
-            ctx.moveTo(mouseInputs[0][0], mouseInputs[0][1]);
-            for (let i = 1; i < mouseInputs.length; i++) {
-            ctx.lineTo(mouseInputs[i][0], mouseInputs[i][1]);
+            ctx.moveTo(inputs[0][0], inputs[0][1]);
+            for (let i = 1; i < inputs.length; i++) {
+            ctx.lineTo(inputs[i][0], inputs[i][1]);
             }
             ctx.strokeStyle = "black";
             ctx.lineWidth = drawLineWidth;
             ctx.stroke();
             ctx.closePath();
         }
-        if (sampleScreen) {
-            initSampleScreen();
+        if (drawScreen.sampleScreen) {
+            drawScreen.initSampleScreen();
         }
-    } else if (approxOnlyToggle) {
+    } else if (displayScreen.approxOnlyToggle) {
         drawApproximation();
     }
 }
 
 
 
+function coordstoDraw(coords) {
+    let toDraw = [];
+    let x, y;
+
+    for (let i = 0; i < coords.length; i++) {
+        x = (coords[i][0] + (width / 2)) * camera.getZoom() + camera.getTx();
+        y = ((height / 2) - coords[i][1]) * camera.getZoom() + camera.getTy();
+        toDraw.push([x, y]);
+    }
+
+    return toDraw;
+}
