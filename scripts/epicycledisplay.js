@@ -1,12 +1,10 @@
 
-
 class DrawScreen {
 
     prevX;
     prevY;
     currX;
     currY;
-    drawnFlag = false;
     rawInputs;
     mouseInputs;
     sampleChosen;
@@ -14,8 +12,8 @@ class DrawScreen {
     clickBoxes;
     points;
     #drawMode = false;
+    drawnFlag = false;
 
-    
     constructor() {
         this.prevX = this.prevY = this.currX = this.currY = 0;
         this.rawInputs = [];
@@ -43,7 +41,7 @@ class DrawScreen {
     }
 
     finishedButtonListener() {
-
+        console.log("\n\nFinishedButtonListener\n\n");
         drawScreen.setDrawMode(false);
         // scaledInputs = canvasToCoords(drawScreen.getInputs());
 
@@ -502,7 +500,7 @@ class Camera {
     updateZoom() {
         let previousZoom = this.#zoom;
 
-        let range = vectors[this.#focusedOn].radius * 2;
+        let range = displayScreen.vectors[this.#focusedOn].radius * 2;
         this.#zoom = (Math.min(width, height) - (breathing_room * 2)) / range;
 
         if (this.#zoom > (Math.min(width, height) / 5)) {
@@ -553,7 +551,6 @@ class DisplayScreen {
     numVectInUse;
     currT;
     vectors;
-    breathing_room;
     timerId;
     running;
     transformation;
@@ -574,7 +571,6 @@ class DisplayScreen {
         this.currT = 0;
         this.vectors = [];
         this.scaledInputs = [];
-        this.breathing_room = width * .3;
         this.running = false;
         
         document.getElementById("draw_control_div").style.display="none";
@@ -585,10 +581,14 @@ class DisplayScreen {
         document.getElementById("display_control_div").style.display="flex";
     
         drawScreen.removeDrawMouseListeners();
-        scaleCanvas();
         camera.reset();
 
         this.scaledInputs = this.canvasToCoords(drawScreen.getInputs());
+
+        console.log("\n\ninit:! ");
+        // for (let i= 0; i < this.scaledInputs.length; i++) {
+        //     console.log(i + " | scaled x,y: " + this.scaledInputs[i][0] + ", " + this.scaledInputs[i][1]);
+        // }
 
         var minX, minY, maxX, maxY;
         minX = minY = Number.MAX_VALUE;
@@ -608,6 +608,8 @@ class DisplayScreen {
         focusSlider.max = this.numVectInUse - 1;
         focusSlider.value = 0;
         this.vectors = this.transformation.getVectors(this.numVectInUse);
+        console.log("# vectors: " + this.vectors.length);
+        scaleCanvas();
 
     }
 
@@ -629,11 +631,11 @@ class DisplayScreen {
         ctx.setLineDash([]);
     
         ctx.beginPath();
-        ctx.moveTo(coordsToDrawX(approx[0][0]), coordsToDrawY(approx[0][1]));
+        ctx.moveTo(this.coordsToDrawX(approx[0][0]), this.coordsToDrawY(approx[0][1]));
     
         for (let i = 1; i < approx.length; i++) {
     
-            ctx.lineTo(coordsToDrawX(approx[i][0]), coordsToDrawY(approx[i][1]));
+            ctx.lineTo(this.coordsToDrawX(approx[i][0]), this.coordsToDrawY(approx[i][1]));
         }
         ctx.stroke();
     
@@ -813,6 +815,19 @@ class DisplayScreen {
         }
         return scaled;
     }
+
+    // coordstoDraw(coords) {
+    //     let toDraw = [];
+    //     let x, y;
+    
+    //     for (let i = 0; i < coords.length; i++) {
+    //         x = (coords[i][0] + (width / 2)) * camera.getZoom() + camera.getTx();
+    //         y = ((height / 2) - coords[i][1]) * camera.getZoom() + camera.getTy();
+    //         toDraw.push([x, y]);
+    //     }
+    
+    //     return toDraw;
+    // }
     
 
 
@@ -826,6 +841,7 @@ const ctx = canvas.getContext("2d");
 const drawLineWidth = 2;
 const tInc = .03;
 const maxNumberOfVectors = 300;
+let breathing_room;
 
 function main() {
     // initialize global variables
@@ -834,7 +850,7 @@ function main() {
     var positionInfo = canvas.getBoundingClientRect();
     height = positionInfo.height;
     width = positionInfo.width;
-
+    breathing_room = width * .3;
 }
 
 
@@ -863,7 +879,7 @@ window.addEventListener("load", loadListener);
 document.getElementById("btn_back").addEventListener("click", backButtonListener);
 document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
-document.getElementById("circle_visibility_toggle").addEventListener('change', function(){circleShownToggle = this.checked});
+document.getElementById("circle_visibility_toggle").addEventListener('change', function(){displayScreen.circleShownToggle = this.checked});
 
 
 function loadListener() {
@@ -895,7 +911,7 @@ function approxOnlyToggleListener() {
         camera.reset();
 
         document.getElementById("range_focus_selector").disabled = true;
-        drawApproximation();
+        displayScreen.drawApproximation();
     } else {
         stopAnimationWrapper(displayScreen.timerId);
 
@@ -903,15 +919,17 @@ function approxOnlyToggleListener() {
         camera.load();
 
         console.log("# Vectors Value: " + adjustNSlider.value);
-        numVectInUse = adjustNSlider.value;
-        vectors = transformation.getVectors(numVectInUse);
+        displayScreen.numVectInUse = adjustNSlider.value;
+        displayScreen.vectors = displayScreen.transformation.getVectors(displayScreen.numVectInUse);
 
-        if (focusSlider.value >= numVectInUse) {
-            focusSlider.value = (numVectInUse - 1);
-            camera.zoomTo(numVectInUse - 1);
+        // both attributes of the range elements below are STRINGS, not Numbers - comparison is weird in Javascript if you're
+        // forgetful. *1 to convert to string
+        if ((focusSlider.value * 1) >= (adjustNSlider.value * 1)) {
+            focusSlider.value = (displayScreen.numVectInUse - 1);
+            camera.zoomTo(displayScreen.numVectInUse - 1);
         }
 
-        focusSlider.max = (numVectInUse - 1);
+        focusSlider.max = (displayScreen.numVectInUse - 1);
         displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 }
@@ -942,54 +960,35 @@ function stopAnimationWrapper(t) {
 }
 
 function adjustNSliderListener() {
-    if (approxOnlyToggle) {
-        numVectInUse = adjustNSlider.value;
-        vectors = transformation.getVectors(numVectInUse);
-        drawApproximation();
+    if (displayScreen.approxOnlyToggle) {
+        displayScreen.numVectInUse = adjustNSlider.value;
+        displayScreen.vectors = displayScreen.transformation.getVectors(displayScreen.numVectInUse);
+        displayScreen.drawApproximation();
     } else {
 
         stopAnimationWrapper(displayScreen.timerId);
 
-        numVectInUse = adjustNSlider.value;
-        vectors = transformation.getVectors(numVectInUse);
+        displayScreen.numVectInUse = adjustNSlider.value;
+        displayScreen.vectors = displayScreen.transformation.getVectors(displayScreen.numVectInUse);
 
-        focusSlider.max = numVectInUse - 1;
+        focusSlider.max = displayScreen.numVectInUse - 1;
 
-        if (focusSlider.value >= (numVectInUse - 1)) {
+        if (focusSlider.value >= (displayScreen.numVectInUse - 1)) {
             console.log("HERE");
-            focusSlider.value = (numVectInUse - 1);
+            focusSlider.value = (displayScreen.numVectInUse - 1);
 
-            camera.zoomTo(numVectInUse - 1);
+            camera.zoomTo(displayScreen.numVectInUse - 1);
 
-            focusSlider.max = (numVectInUse - 1);
+            focusSlider.max = (displayScreen.numVectInUse - 1);
 
         }
-        console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
-        console.log("focused on: " + camera.getFocusedOn() + " | focusSlider value: " + (focusSlider.value));
+        // console.log("# NSlider: " + adjustNSlider.value + " | numVectors: " + numVectInUse);
+        // console.log("focused on: " + camera.getFocusedOn() + " | focusSlider value: " + (focusSlider.value));
         displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function scaleCanvas() {
     let controls_container = document.getElementById("epi_controls_container");
@@ -1040,21 +1039,9 @@ function scaleCanvas() {
             drawScreen.initSampleScreen();
         }
     } else if (displayScreen.approxOnlyToggle) {
-        drawApproximation();
+        displayScreen.drawApproximation();
     }
 }
 
 
 
-function coordstoDraw(coords) {
-    let toDraw = [];
-    let x, y;
-
-    for (let i = 0; i < coords.length; i++) {
-        x = (coords[i][0] + (width / 2)) * camera.getZoom() + camera.getTx();
-        y = ((height / 2) - coords[i][1]) * camera.getZoom() + camera.getTy();
-        toDraw.push([x, y]);
-    }
-
-    return toDraw;
-}
