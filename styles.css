@@ -4,8 +4,12 @@
     }
 }
 
+body {
+  /* background: #f6fdfa; */
+}
+
 p {
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: Georgia, 'Times New Roman', Times;
 }
 
 .title {
@@ -32,16 +36,18 @@ main {
     padding: 10px 50px 10px;
     align-items: center;
     justify-items: center;
+    
 }
 
 .display-container {
   display: block;
-    border: 6px solid rgb(211, 32, 32);
+    border: 6px solid rgb(250 112 112);
+    background: rgb(254 253 237);
     padding-bottom: 10px;
 }
 
 #canvas_interactive {
-    border: 1px solid rgb(13, 13, 13);
+    border-bottom: 3px solid rgb(250 112 112);
     width: 100%;
     flex: 1;
     padding-left: 0;
@@ -55,6 +61,8 @@ main {
 
 .controls-container {
     /* height: 50px; */
+    font-family: Georgia, 'Times New Roman', Times;
+    background: #927464;
     padding: 0px;
     width: 90%;
     padding-left: 0;
@@ -63,7 +71,7 @@ main {
     margin-right: auto;
     /* background: plum; */
     /* border: 4px solid indigo; */
-    border: 2px solid rgb(13, 197, 238);
+    border: 2px solid rgb(0, 0, 0);
 
     display: flex;
     flex-wrap: wrap;
@@ -76,12 +84,14 @@ main {
     flex-direction: column;
     padding: auto;
     justify-content: space-evenly;
-    border: 2px solid rgb(238, 13, 13);
+    border: 2px solid rgb(0, 0, 0);
 
   }
 
   .control {
     /* display: block; */
+    font-family: Georgia, 'Times New Roman', Times;
+
     /* margin: 10px 0;*/
     padding: 4px; 
     /* width: 90%; */
@@ -98,3 +108,59 @@ main {
   .slider {
     width: 200px;
   }
+
+  .switch {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .canvas_checkbox {
+    display: none;
+  }
+
+  .slidebox {
+    width: 20px;
+    height: 10px;
+    
+    background-color: lightgray;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    border: 1px solid transparent;
+    transition: .3s;
+    box-shadow: 0 0 5px 0 rgb(0, 0, 0, 0.25) inset;
+    cursor: pointer;
+    flex: 0 0 0 0;
+
+  }
+
+  .switch_label {
+    padding-right: 10px;
+  }
+
+   .slidebox::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    transform: translateX(-10px);
+    border-radius: 20px;
+    transition: .3s;
+    /* box-shadow: 0 0 10px 3px rgba(232, 5, 5, 0.25); */
+  }
+
+  .canvas_checkbox:checked ~ .slidebox::before {
+    transform: translateX(10px);
+    box-shadow: 0 0 3px 3px rgb(0, 0, 0, 0.25);
+  }
+
+  .canvas_checkbox:checked ~ .slidebox {
+    background-color: #2196F3;
+  }
+
+  .canvas_checkbox:active ~ .slidebox::before {
+    transform: translate(0);
+  } 

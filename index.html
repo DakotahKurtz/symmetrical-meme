@@ -5,7 +5,18 @@
 
     <title>Canvas tutorial</title>
 
+    <!-- 
+        red: FA7070
+        creme: FEFDED
+        dirtycreme: F5F4E4
+        blackish: 363537
+
+        light green: C6EBC5
+        dark green: A1C398
+    -->
+
 </head>
+<!-- #fbfeed -->
 <body>
     <div class = "title">
         <h1>SiteName/Logo</h1>
@@ -63,9 +74,10 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
                             <input type="button" value="Sample Drawings" id="btn_samples">
                         </div>
                         <div class="control">
-                            <label for="closed_form">
-                                Closed Form
-                                <input type="checkbox" class="canvas_checkbox" id="closed_form_toggle" name="closed_form" checked>
+                            <label class="switch">
+                                <div class = "switch_label">Closed Form</div>       
+                                <input type="checkbox" class="canvas_checkbox" id="closed_form_toggle"  for="closed_form" checked>
+                                <div class="slidebox"></div>
                             </label>
                         </div>
                     </div>
@@ -92,21 +104,24 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
                     </div>
                     <div class="control-column" id="display_toggle_div">
                         <div class = "control" id="circle_toggle_div">
-                            <label for="show_circles_toggle">
-                                Show Circles
-                            <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" name="show_circles_toggle" checked>
-                            </label>
+                            <label class="switch">
+                            <div class = "switch_label">Circles</div>       
+                            <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" checked>
+                            <div class="slidebox"></div>
+                        </label>
                         </div>
                         <div class="control" id="approx_toggle_div">
-                            <label for="only_approx">
-                                Approximation Only
-                            <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle" name="only_approx">
-                            </label>
+                            <label class="switch">
+                                <div class = "switch_label">Stop</div>       
+                                <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle">
+                            <div class="slidebox"></div>
+                        </label>
                         </div>
                         <div class="control" id="goal_toggle_div">
-                            <label for="show_goal">
-                                Show Goal 
-                                <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" name="show_goal" checked>
+                            <label class="switch">
+                                <div class = "switch_label">Goal</div>       
+                                <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" checked>
+                                <div class="slidebox"></div>
                             </label>
                         </div>
                     </div>
@@ -126,6 +141,7 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
 </div>
     <script src = "scripts/dft.js" ></script>
     <script src ="scripts/samples.js"></script>
+
     <script src = "scripts/epicycledisplay.js"></script>
 
 </body>
