@@ -1,11 +1,15 @@
-@media only screen and (max-width: 800px) {
-    .side{
-        display: none;
-    }
-}
+:root {
+  --translateX: 0px;
+  --translateY: 0px;
 
-body {
-  /* background: #f6fdfa; */
+  --controlsTransparency: .8;
+  --white: #f6fdfa;
+  }
+
+@media only screen and (max-width: 1200px) {
+  .side{
+      display: none;
+  }
 }
 
 p {
@@ -29,11 +33,11 @@ p {
 
 main {
     display: flex;
-    width: 500px;
+    /* width: 500px; */
     flex: 3 1 auto;
     flex-direction: column;
     border: 3px dotted rgb(230, 142, 142);
-    padding: 10px 50px 10px;
+    padding: 10px 50px 10px 10px;
     align-items: center;
     justify-items: center;
     
@@ -41,9 +45,13 @@ main {
 
 .display-container {
   display: block;
+  position: relative;
     border: 6px solid rgb(250 112 112);
-    background: rgb(254 253 237);
-    padding-bottom: 10px;
+    /* background: rgb(254 253 237); */
+    /* background: rgb(250 112 112); */
+    
+
+    /* padding-bottom: 10px; */
 }
 
 #canvas_interactive {
@@ -59,39 +67,100 @@ main {
     height: 500px; */
   }
 
-.controls-container {
-    /* height: 50px; */
-    font-family: Georgia, 'Times New Roman', Times;
-    background: #927464;
-    padding: 0px;
-    width: 90%;
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: auto;
-    margin-right: auto;
-    /* background: plum; */
-    /* border: 4px solid indigo; */
-    border: 2px solid rgb(0, 0, 0);
+  .minimize-button {
 
+    font-family: inherit;
+    font-size: 15px;
+    border: none; 
+    cursor: pointer;
+
+    color: var(--white);
+    background-color: rgb(71 91 90/var(--controlsTransparency));
+    border-radius: 4px;
+    /* background: plum; */
+    border: 2px solid rgb(250 112 112);
+    border-bottom: 0px;
+  }
+
+  .canvas_btn {
+    font-family: inherit;
+    font-size: inherit;
+    border: none; 
+    background-color: inherit;
+    cursor: pointer;
+
+    color: var(--white);
+    display: inline-block;    
+   }
+
+   .canvas_btn:disabled, .switch:disabled, .minimize-button:disabled {
+    color:#9c9c9c;
+    cursor: not-allowed;
+   }
+
+   /* .minimize-button:hover:not([disabled]) {
+    color: rgb(250 112 112);
+
+   } */
+   /* .canvas_btn:hover:not([disabled]) {
+    color: rgb(250 112 112);
+   } */
+
+   .switch:hover:not([disabled]), .canvas_btn:hover:not([disabled]),  .minimize-button:hover:not([disabled]) {
+    /* color: rgb(250 112 112); */
+    box-shadow: 0px 0 3px 3px rgb(0, 0, 0, .5);
+
+   }
+
+.controls-container-container {
+  position: absolute;
+  left: 5%;
+  top: 75%;
+  font-size: 18px;
+  font-family: Georgia, 'Times New Roman', Times;
+  color: var(--white);
+
+
+  width: 70%;
+}
+
+.controls-container {
+
+    font-family: Georgia, 'Times New Roman', Times;
+    font-size: inherit;
+
+    background: rgb(71 91 90 / var(--controlsTransparency));
+    /* color: #fff; */
+
+    border-radius: 10px;
+    /* background: plum; */
+    border: 4px solid rgb(250 112 112);
+    /* border: 2px solid rgb(0, 0, 0); */
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     justify-content: space-evenly; 
-    gap: 2px;
   }
 
   .control-column {
     flex-direction: column;
     padding: auto;
-    justify-content: space-evenly;
-    border: 2px solid rgb(0, 0, 0);
+    justify-content: space-between;
+    /* align-content: baseline; */
+    /* border: 2px solid rgb(0, 0, 0); */
 
   }
 
+
+
   .control {
     /* display: block; */
-    font-family: Georgia, 'Times New Roman', Times;
+    /* font-family: Georgia, 'Times New Roman', Times; */
+    border: none;
+    background-color: inherit;
 
+    cursor: pointer;
+    display: inline-block; 
+    /* color: var(--white); */
     /* margin: 10px 0;*/
     padding: 4px; 
     /* width: 90%; */
@@ -113,6 +182,7 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    cursor: pointer;
   }
 
   .canvas_checkbox {
@@ -120,15 +190,15 @@ main {
   }
 
   .slidebox {
-    width: 20px;
-    height: 10px;
+    width: 30px;
+    height: 15px;
     
     background-color: lightgray;
     border-radius: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
-    border: 1px solid transparent;
+    /* border: 1px solid transparent; */
     transition: .3s;
     box-shadow: 0 0 5px 0 rgb(0, 0, 0, 0.25) inset;
     cursor: pointer;
@@ -145,22 +215,110 @@ main {
     display: block;
     width: 100%;
     height: 100%;
-    background-color: #fff;
-    transform: translateX(-10px);
-    border-radius: 20px;
+    background-color: var(--white);
+    transform: translateX(-15px);
+    border-radius: 10px;
     transition: .3s;
     /* box-shadow: 0 0 10px 3px rgba(232, 5, 5, 0.25); */
   }
 
   .canvas_checkbox:checked ~ .slidebox::before {
-    transform: translateX(10px);
+    transform: translateX(15px);
     box-shadow: 0 0 3px 3px rgb(0, 0, 0, 0.25);
   }
 
   .canvas_checkbox:checked ~ .slidebox {
-    background-color: #2196F3;
+    background-color: #3F7CAC;
   }
 
   .canvas_checkbox:active ~ .slidebox::before {
     transform: translate(0);
   } 
+  
+
+
+  .minimize-class {
+    animation: 1s minimize 1;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-in;
+    transform-origin: top left;
+  }
+
+  .slide-away-class {
+    animation: 1s slide-away 1;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-in;
+  }
+
+  .slide-back-class {
+    animation: 1s slide-back 1;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
+  }
+
+  .un-minimize-class {
+    animation: 1s un-minimize 1;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
+    transform-origin: top left;
+  }
+
+  @keyframes un-minimize {
+    from {
+      transform: scaleX(0) scaleY(0);
+      opacity: 0;
+    }
+
+    20% {
+      transform: scaleX(.5) scaleY(.2);
+      opacity: .9;
+    }
+
+    to {
+      transform: scaleX(1) scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  
+
+  @keyframes minimize {
+    from {
+      transform: scaleX(1) scaleY(1);
+      opacity: 1;
+    }
+
+    80% {
+      transform: scaleX(.5) scaleY(.2);
+      opacity: .9;
+    }
+
+    to {
+      transform: scaleX(0) scaleY(0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-back {
+    from {
+      transform: scale(1) translateX(calc(var(--translateX))) translateY(calc(var(--translateY)));
+    }
+
+    to {
+      transform: scale(1) translateX(0px) translateY(0px);
+
+    }
+  }
+
+  @keyframes slide-away {
+      from {
+        transform: scale(1) translateX(0px) translateY(0px);
+        
+      }
+    
+      to {
+        transform: scale(1) translateX(calc(var(--translateX))) translateY(calc(var(--translateY)));
+
+      }
+    
+  }

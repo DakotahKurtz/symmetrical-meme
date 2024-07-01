@@ -1,3 +1,11 @@
+class OverHead {
+    visible = false;
+
+    constructor() {
+
+    }
+}
+
 
 class DrawScreen {
 
@@ -13,11 +21,13 @@ class DrawScreen {
     points;
     #drawMode = false;
     drawnFlag = false;
+    cleanUp = true;
 
     constructor() {
         this.prevX = this.prevY = this.currX = this.currY = 0;
         this.rawInputs = [];
         this.mouseInputs = [];
+        
         this.sampleChosen = -1;
         this.sampleScreen = false;
 
@@ -37,7 +47,9 @@ class DrawScreen {
     samplesButtonListener() {
         drawScreen.sampleScreen = true;
         drawScreen.removeDrawMouseListeners();
-        drawScreen.initSampleScreen()
+
+        drawScreen.initSampleScreen(-1)
+        
     }
 
     finishedButtonListener() {
@@ -52,31 +64,34 @@ class DrawScreen {
         
       }
 
+    sampleScreenMouseListener(e) {
+        let x = DrawScreen.getMousePos(canvas, e).x;
+        let y = DrawScreen.getMousePos(canvas, e).y;
+
+        let hovered = -1;
+        let i = 0;
+        for (; i < drawScreen.clickBoxes.length; i++) {
+            if (x > drawScreen.clickBoxes[i][0] && x < (drawScreen.clickBoxes[i][0] + drawScreen.clickBoxes[i][2]) && y > drawScreen.clickBoxes[i][1] && y < (drawScreen.clickBoxes[i][1] + drawScreen.clickBoxes[i][2])) {
+                hovered = i;
+                break;
+            }
+        }
+
+        drawScreen.initSampleScreen(hovered);
+    }
+
     eraseButtonListener() {
         ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "rgb(" + primary_bg + ")";
+        ctx.fillRect(0, 0, width, height);
         drawScreen.mouseInputs = [];
         drawScreen.drawDrawHere();
         document.getElementById("btn_finished").disabled = true;
     }
-
-    /*
-let primary_bg = creme;
-let approx_color = nice_blue;
-let circle_color = blackish;
-let circle_focus_color = red;
-let vector_color = light_green;
-let goal_dots_color = offBlackish;
-let draw_here_color = offBlackish;
-let drawing_approx_color = artificial_blue;
-let sampleBorderColor = red;
-let sampleBgColor = dirty_creme;
-
-const sampleInnerBorderWidth = 3;
-    */
     
-    initSampleScreen() {
-        canvas.removeEventListener("click", this.selectSample);
-    
+    initSampleScreen(hovered) {
+        drawScreen.removeSampleScreenListeners();
+        document.getElementById("control-main").style.display="none";
 
         this.sampleChosen = -1;
         this.clickBoxes = [];
@@ -109,15 +124,15 @@ const sampleInnerBorderWidth = 3;
         ctx.lineWidth = sampleOuterBorderLineWidth;
         ctx.strokeRect(zx, zy, swidth, sheight);
 
-        
-
-        
 
         let sampleDim = ((Math.min(width - leftPadding, height - upperPadding) - padding * 4) / 2) ;
         let p;
         let xt, yt;
         let col, row, index;
         col = row = index = 0;
+
+        let buttonShadow = 10;
+        let hoverShift = 3;
     
         let text = "choose sample";
         let text_size = "48";
@@ -140,10 +155,14 @@ const sampleInnerBorderWidth = 3;
             yt = upperPadding + zy + (padding * (row + 1)) + (sampleDim * row);
 
             // draw shadow first
-            let buttonShadow = 10;
             ctx.fillStyle = "rgb(" + blackish + ")";
             ctx.fillRect(xt + buttonShadow, yt + buttonShadow, sampleDim, sampleDim);
             ctx.fill();
+
+            if (index == hovered) {
+                xt += hoverShift;
+                yt += hoverShift;
+            }
 
             // base canvas layer
             ctx.fillStyle = "rgb(" + sampleCanvasColor + ")";
@@ -153,6 +172,8 @@ const sampleInnerBorderWidth = 3;
             // draw points on top
             ctx.fillStyle = "rgb(" + goal_dots_color + ")";
             ctx.beginPath();
+
+
             ctx.moveTo(p.getPointX(0) + xt, p.getPointY(0) + yt);
             for (let i = 0; i < p.getLength(); i++) {
                 ctx.beginPath();
@@ -191,7 +212,12 @@ const sampleInnerBorderWidth = 3;
         ctx.lineTo(zx + backArrowInc, zy + (backArrowInc * 4));
         ctx.fill();
 
-        ctx.strokeStyle = "rgb(" + blackish + ")";
+        if (hovered == drawScreen.points.length) { 
+            ctx.strokeStyle = "rgb(" + red + ")";
+        } else {
+            ctx.strokeStyle = "rgb(" + blackish + ")";
+
+        }
         ctx.beginPath();
         ctx.moveTo(zx + backArrowInc, zy + (backArrowInc * 4));
         ctx.lineTo(zx + (backArrowInc * 3), zy + backArrowInc);
@@ -205,13 +231,15 @@ const sampleInnerBorderWidth = 3;
     
         this.clickBoxes.push([zx, zy, (backArrowInc * 7)]);
     
-        canvas.addEventListener("click", this.selectSample);
-    
+        // canvas.addEventListener("click", this.selectSample);
+        drawScreen.addSampleScreenListeners();
     }
     
     selectSample(e) {
         let x = DrawScreen.getMousePos(canvas, e).x;
         let y = DrawScreen.getMousePos(canvas, e).y;
+
+        console.log("x, y: " + x + ", " + y + " | length " + drawScreen.clickBoxes.length);
     
         let i = 0;
         let clicked = -1;
@@ -234,14 +262,14 @@ const sampleInnerBorderWidth = 3;
                 }
     
                 drawScreen.sampleScreen = false;
-                canvas.removeEventListener("click", drawScreen.selectSample);
+                drawScreen.removeSampleScreenListeners();
                 drawScreen.finishedButtonListener();
             }
             else {
                 switch (clicked) {
                     case drawScreen.points.length:
                         drawScreen.sampleScreen = false;
-                        canvas.removeEventListener("click", drawScreen.selectSample);
+                        drawScreen.removeSampleScreenListeners();
                         drawScreen.initDrawMode();
                 }
             }
@@ -255,7 +283,10 @@ const sampleInnerBorderWidth = 3;
         camera.reset();
         this.mouseInputs = [];
         this.sampleChosen = -1;
+
+        // scaleCanvas();
     
+        document.getElementById("control-main").style = "position:absolute;";;
         document.getElementById("draw_control_div").style.display="flex";
         document.getElementById("draw_options_div").style.display="flex";
     
@@ -263,26 +294,25 @@ const sampleInnerBorderWidth = 3;
         document.getElementById("display_toggle_div").style.display = "none";
         document.getElementById("display_control_div").style.display="none";
         document.getElementById("btn_finished").disabled = true;
-    
         scaleCanvas();
+
     
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = "rgb(" + primary_bg + ")";
-        ctx.fillRect(0, 0, width, height);
-        this.drawDrawHere();
+        drawScreen.display();
         drawScreen.addDrawMouseListeners();
     }
 
-    addDrawMouseListeners() {
-        canvas.addEventListener("mousemove", this.draw_mouseMove);
-        canvas.addEventListener("mousedown", this.draw_mouseDown);
-        canvas.addEventListener("mouseup", this.draw_mouseUp);
-    }
-    
-    removeDrawMouseListeners() {
-        canvas.removeEventListener("mousemove", this.draw_mouseMove);
-        canvas.removeEventListener("mousedown", this.draw_mouseDown);
-        canvas.removeEventListener("mouseup", this.draw_mouseUp);
+    display() {
+        ctx.fillStyle = "rgb(" + primary_bg + ")";
+        ctx.fillRect(0, 0, width, height);
+
+        if (this.mouseInputs.length == 0) {
+            this.drawDrawHere();
+        } else {
+            this.drawInputPoints();
+        }
+        if (this.sampleScreen) {
+            this.initSampleScreen(this.sampleChosen);
+        }
     }
 
         /*
@@ -297,8 +327,6 @@ const sampleInnerBorderWidth = 3;
         };
     }
 
-
-    
     draw_mouseDown(e) {
         if (!this.drawnFlag) {
             ctx.clearRect(0, 0, width, height);
@@ -323,32 +351,153 @@ const sampleInnerBorderWidth = 3;
         ctx.beginPath();
         ctx.fillRect(this.currX, this.currY, drawLineWidth, drawLineWidth);
         ctx.closePath();
-        drawScreen.mouseInputs.push([this.currX, this.currY]);
+        // drawScreen.mouseInputs.push([this.currX, this.currY]);
+    }
+
+    static distance(x1, y1, x2, y2) {
+        return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+    }
+
+    clean(inputs) {
+        if (inputs.length == 0) {
+            return inputs;
+        }
+        let distance = 10;
+        let minimum = 10;
+
+            // make sure there is appropropriate space between each point
+            let cX, cY, nX, nY, d;
+            let copy = [];
+            let totalAdded = 0;
+
+            // console.log("input lenght: " + inputs.length);
+            copy.push([inputs[0][0], inputs[0][1]]);
+
+            for (let i = 0; i < inputs.length - 1; i++) {
+                let j = i + 1;
+                while (j < inputs.length - 1 && DrawScreen.distance(inputs[i][0], inputs[i][1], inputs[j][0], inputs[j][1]) < minimum) {
+                    j++;
+                }
+                copy.push([inputs[j][0], inputs[j][1]]);
+                i = (j - 1);
+            }
+
+            inputs = [];
+
+            for (let i = 0; i < copy.length; i++) {
+                inputs.push([copy[i][0], copy[i][1]]);
+            }
+
+
+
+            // console.log("copyLenght: " + copy.length);
+
+            for (let i = 0; i < inputs.length - 1; i++) {
+                // console.log("\n\n" + i + " | Current size of copy: " + copy.length);
+                cX = inputs[i][0];
+                cY = inputs[i][1];
+                nX = inputs[i + 1][0];
+                nY = inputs[i + 1][1];
+
+                d = DrawScreen.distance(cX, cY, nX, nY);
+                if (d > distance) {
+                    let divisionSize = Math.floor(d / distance);
+                    let xInc = (nX - cX) / divisionSize;
+                    let yInc = (nY - cY) / divisionSize;
+                    let divisions = divisionSize - 1;
+
+                    let temp = [];
+                    // console.log("\tadding " + divisions + " | totalAdded: " + totalAdded);
+                    for (let j = 0; j <= i + totalAdded; j++) {
+                        // console.log("\t" + j + " | pushing: " + copy[j][0] + ", " + copy[j][1]);
+                        temp.push([copy[j][0], copy[j][1]]);
+                    }
+                    for (let j = 0; j < divisions; j++) {
+                        cX += xInc;
+                        cY += yInc;
+                        temp.push([cX, cY]);
+                        totalAdded += 1;
+                    }
+                    for (let j = (i + totalAdded + 1 - divisions) ; j < copy.length; j++) {
+                        temp.push([copy[j][0], copy[j][1]]);
+                    }
+                    // console.log("Temp size; " + temp.length);
+                    copy = [];
+                    for (let j = 0; j < temp.length; j++) {
+                        copy.push([temp[j][0], temp[j][1]]);
+                    }
+
+                }
+                // if (i == 5) {
+                //     console.log("\n\nAfter addition\n");
+                //     for (let j = 0; j < copy.length; j++) {
+                //         console.log(j + " | x, y: " + copy[j][0] + ", " + copy[j][1]);
+                //     }
+                // }
+
+
+            }
+
+            // console.log("COPY SIZE: " + copy.length);
+
+            // fill in gaps to close shape if needed
+            nX = inputs[0][0];
+            nY = inputs[0][1];
+            cX = inputs[inputs.length - 1][0];
+            cY = inputs[inputs.length - 1][1];
+            d = DrawScreen.distance(nX, nY, cX, cY);
+            if (d > distance) { 
+                let divisions = Math.floor(d / distance);
+                console.log("d | divisions : " + d + " | " + divisions);
+
+                let xInc = (nX - cX) / divisions;
+                let yInc = (nY - cY) / divisions;
+                for (let i = 0; i < divisions; i++) {
+                    cX += xInc;
+                    cY += yInc;
+                    copy.push([cX, cY]);
+                }
+            }
+
+            for (let i = 0; i < copy.length; i++) {
+                console.log(i + " | " + copy[i][0] + ", " + copy[i][1]);
+            }
+
+            return copy;
     }
     
     draw_mouseUp() {
     
-        if (document.getElementById("closed_form_toggle").checked) { // trying to draw a closed shape
             let x = drawScreen.mouseInputs[0][0];
             let y = drawScreen.mouseInputs[0][1];
             drawScreen.mouseInputs.push([x,y]);
-            ctx.strokeStyle = "rgb(" + approx_color + ")";
 
-            ctx.beginPath();
-            ctx.moveTo(this.currX, this.currY);
-            ctx.lineTo(x,y);
-            ctx.stroke();
-        } else {
-            // manual reverse
-            let rev = [];
-            for (let i = 0; i < drawScreen.mouseInputs.length; i++) {
-                rev.push([drawScreen.mouseInputs[drawScreen.mouseInputs.length - 1 - i][0], drawScreen.mouseInputs[drawScreen.mouseInputs.length - 1 - i][1]]);
-            }
-            drawScreen.mouseInputs = drawScreen.mouseInputs.concat(rev);
-        }
-    
-    
+            drawScreen.drawInputPoints();
+
+
         this.drawnFlag = false;
+    }
+
+    drawInputPoints() {
+        let points = [];
+        if (this.cleanUp) {
+            points = this.clean(drawScreen.mouseInputs);
+        } else {
+            points = drawScreen.mouseInputs;
+        }
+
+        ctx.fillStyle = "rgb(" + primary_bg + ")";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fill();
+
+        ctx.fillStyle = "rgb(" + nice_blue + ")";
+
+    for (let i = 0; i < points.length; i++) {
+        ctx.beginPath();
+        // console.log(i + " | x, y: " + drawScreen.mouseInputs[i][0] + ", " + drawScreen.mouseInputs[i][1]);
+        ctx.arc(points[i][0], points[i][1], 1, 0, 2 * Math.PI, true);
+        ctx.fill();
+    }
     }
     
     draw_mouseMove(e) {
@@ -367,7 +516,6 @@ const sampleInnerBorderWidth = 3;
             ctx.lineWidth = drawLineWidth;
             ctx.stroke();
             ctx.closePath();
-            
         }
     }
 
@@ -380,18 +528,42 @@ const sampleInnerBorderWidth = 3;
         let y = (height - parseInt(size)) / 2;
         ctx.fillStyle = "rgb(" + draw_here_color + " / 50%)";
         ctx.fillText(text, x, y);
-    
     }
 
-    getDrawMode(){return this.#drawMode;}
-    setDrawMode(b){this.#drawMode = b;}
     getInputs() {
-        if (this.sampleChosen == -1) {
+        if (this.sampleChosen == -1 && !this.cleanUp) {
             return this.mouseInputs;
-        } else {
+        } else if (this.sampleChosen == -1) {
+            return this.clean(this.mouseInputs);
+        }
+        else {
             return this.rawInputs;
         }
     }
+
+    addDrawMouseListeners() {
+        canvas.addEventListener("mousemove", this.draw_mouseMove);
+        canvas.addEventListener("mousedown", this.draw_mouseDown);
+        canvas.addEventListener("mouseup", this.draw_mouseUp);
+    }
+    
+    removeDrawMouseListeners() {
+        canvas.removeEventListener("mousemove", this.draw_mouseMove);
+        canvas.removeEventListener("mousedown", this.draw_mouseDown);
+        canvas.removeEventListener("mouseup", this.draw_mouseUp);
+    }
+
+    addSampleScreenListeners() {
+        canvas.addEventListener("mousemove", this.sampleScreenMouseListener);
+        canvas.addEventListener("click", this.selectSample);
+    }
+
+    removeSampleScreenListeners() {
+        canvas.removeEventListener("mousemove", this.sampleScreenMouseListener);
+        canvas.removeEventListener("click", this.selectSample);
+    }
+    getDrawMode(){return this.#drawMode;}
+    setDrawMode(b){this.#drawMode = b;}
     getMouseInputs(){return this.mouseInputs;}
 }
 
@@ -645,9 +817,12 @@ class DisplayScreen {
         document.getElementById("draw_control_div").style.display="none";
         document.getElementById("draw_options_div").style.display="none";
     
+        document.getElementById("control-main").style.display = "absolute";
         document.getElementById("display_slider_div").style.display ="flex";
         document.getElementById("display_toggle_div").style.display = "flex";
         document.getElementById("display_control_div").style.display="flex";
+
+        scaleCanvas();
     
         drawScreen.removeDrawMouseListeners();
         camera.reset();
@@ -679,6 +854,8 @@ class DisplayScreen {
 
     drawApproximation() {
         ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "rgb(" + primary_bg + ")";
+        ctx.fillRect(0, 0, height, width);
         let approx = [];
         let endPoints = [];
         let t = 0;
@@ -768,14 +945,15 @@ class DisplayScreen {
         // let timeShown = displayScreen.approximation[displayScreen.numVectInUse - 1][2] - displayScreen.approximation[0][2];
         let timeShown = displayScreen.approximation[displayScreen.approximation.length - 1][2] - displayScreen.approximation[0][2];
 
-        if ( timeShown > ((Math.PI * 2) + .1)) {
+        while ( timeShown > ((Math.PI * 2) + .1)) {
             displayScreen.approximation.shift();
+            timeShown = displayScreen.approximation[displayScreen.approximation.length - 1][2] - displayScreen.approximation[0][2];
             // console.log("timeShown: " + timeShown + ", num: " + displayScreen.approximation.length);
         }
     
         // draw actual approximation
-        let approxLineWidth = Math.min((width * .01) * camera.getZoom(), (width * .05));
-        ctx.lineWidth = approxLineWidth;
+        // let approxLineWidth = Math.min((width * .01) * camera.getZoom(), (width * .05));
+        ctx.lineWidth = 2;
         ctx.strokeStyle = "rgb(" + approx_color + ")";
         ctx.beginPath(displayScreen.coordsToDrawX(displayScreen.approximation[0][0]), displayScreen.coordsToDrawY(displayScreen.approximation[0][1]));
     
@@ -787,7 +965,7 @@ class DisplayScreen {
         // draw circle showing current x,y value of fourier transform at currT
         ctx.fillStyle = "rgb(" + drawing_approx_color + ")";
         ctx.beginPath();
-        ctx.arc(displayScreen.coordsToDrawX(circleCenters[circleCenters.length - 1][0]), displayScreen.coordsToDrawY(circleCenters[circleCenters.length - 1][1]), approxLineWidth * 1.2, 0, 2*Math.PI, true);
+        ctx.arc(displayScreen.coordsToDrawX(circleCenters[circleCenters.length - 1][0]), displayScreen.coordsToDrawY(circleCenters[circleCenters.length - 1][1]), 3, 0, 2*Math.PI, true);
         ctx.fill();
     
         displayScreen.drawNumVectors();
@@ -926,8 +1104,8 @@ const artificial_blue = "64 107 173";
 const whiter_white = "246 253 250";
 
 const circleBehindFocusLineWidth = 1;
-const circleUnfocusedLineWidth = 2;
-const circleFocusedLineWidth = 3;
+const circleUnfocusedLineWidth = 1;
+const circleFocusedLineWidth = 2;
 const vectorLineWidth = 2;
 const canvasTextWidth = 3;
 
@@ -990,6 +1168,9 @@ var drawScreen = new DrawScreen();
 var camera = new Camera(defaultTick);
 var displayScreen = new DisplayScreen();
 
+document.getElementById("clean-up-toggle").addEventListener("change", cleanUpToggleListener);
+document.getElementById("epi_controls_container").addEventListener("animationend", controlAnimListener);
+
 
 focusSlider = document.getElementById("range_focus_selector");
 focusSlider.addEventListener("input", focusSliderListener);
@@ -1006,9 +1187,84 @@ document.getElementById("show_goal_toggle").addEventListener('change', showGoalT
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){displayScreen.circleShownToggle = this.checked});
 
+document.getElementById("min-btn").addEventListener("click", anim);
+
+function cleanUpToggleListener() {
+    drawScreen.cleanUp = !drawScreen.cleanUp;
+    if (drawScreen.getDrawMode()) {
+        drawScreen.display();
+    }
+
+}
+
+function controlAnimListener() {
+    let container = document.getElementById("control-main");
+    console.log("animation End");
+    
+    if (container.classList.contains("slide-away-class")) {
+        document.getElementById("min-btn").value = "show";
+    } else {
+        document.getElementById("min-btn").value = "hide";
+    }
+}
+
+function anim() {
+    console.log("Clicked");
+    let tx, ty;
+    let container = document.getElementById("control-main");
+    let element = document.getElementById("epi_controls_container");
+
+    style = window.getComputedStyle(document.getElementById("min-btn"));
+    let btnW = parseFloat(style.width);
+    let btnH = parseFloat(style.height);
+    let btnTop = parseFloat(container.style.top);
+    let btnLeft = parseFloat(container.style.left);
+    // console.log("btn w/h: " + style.width + "/" + style.height + " x,y: ");
+
+    tx = width - btnW - btnLeft;
+    ty = height - btnH - btnTop;
+
+    let root = document.documentElement;
+    root.style.setProperty('--translateX', tx + "px");
+    root.style.setProperty('--translateY', ty + "px");
+
+    // element.classList.toggle("minimize-class");
+    // container.classList.toggle("slide-away-class");
+
+    if (element.classList.contains('minimize-class')) {
+        element.classList.remove('minimize-class');
+        container.classList.remove("slide-away-class");
+        element.classList.add("un-minimize-class");
+        container.classList.add("slide-back-class");
+    } else {
+        element.classList.add('minimize-class');
+        container.classList.add("slide-away-class");
+        element.classList.remove("un-minimize-class");
+        container.classList.remove("slide-back-class");
+    }
+//     if (element.classList.contains('classname')) {
+//         element.classList.remove('classname'); // reset animation
+
+//     } else {
+
+// element.classList.add('classname'); // start animation
+
+// // void element.offsetWidth; // trigger reflow
+// // void label.offsetWidth;
+//     }
+//     if (label.classList.contains('controlclass')) {
+//         label.classList.remove('controlclass') 
+//     }
+//     else {
+//             label.classList.add('controlclass');
+
+//         }
+
+
+}
 
 function loadListener() {
-    scaleCanvas();
+    // scaleCanvas();
     drawScreen.initDrawMode();
 
 }
@@ -1109,7 +1365,6 @@ function adjustNSliderListener() {
 }
 
 function scaleCanvas() {
-    let controls_container = document.getElementById("epi_controls_container");
     let epi_container = document.getElementById("epi_container");
     let vp_width  = window.innerWidth || document.documentElement.clientWidth || 
     document.body.clientWidth;
@@ -1117,47 +1372,41 @@ function scaleCanvas() {
     document.body.clientHeight;
     
 
-    let control_height = controls_container.offsetHeight;
+    // console.log("Viewport w,h: " + vp_width + ", " + vp_height + " controlHeight: " + control_height);
+    let spacing = 10;
+    if (vp_height < window.innerWidth) {
+        w = h = Math.max(vp_height - spacing, 300);
 
-    console.log("Viewport w,h: " + vp_width + ", " + vp_height + " controlHeight: " + control_height);
-
-
-    if ((vp_height + (controls_container.offsetHeight )) < window.innerWidth) {
-        w = h = (vp_height - controls_container.offsetHeight);
-        epi_container.style.width = w + "px";
-        epi_container.style.height = vp_height + "px";
     } else {
-        w = h = window.innerWidth - control_height;
-        epi_container.style.width = w + "px";
-        epi_container.style.height = h + control_height + "px";
+        w = h = Math.max(vp_width - spacing, 300);
     }
 
-    canvas.width = width  = w;
-    canvas.height = height = h;
+    if (!(document.getElementById("aside").style.display == "none")) {
+        let aside_w = document.getElementById("aside").offsetWidth;
+        console.log("Aside visible: " + aside_w);
 
-    breathing_room = width * .3;
+        w = h = (w - aside_w);
+    }
+
+    epi_container.style.width = w + "px";
+    epi_container.style.height = h + "px";
+
+    canvas.width = canvas.height = height = width = w;
+    breathing_room = width * .2;
+
+    if (!drawScreen.sampleScreen) {
+        let controls_container = document.getElementById("control-main");
+
+        let style = window.getComputedStyle(controls_container);
+        let control_height = parseFloat(style.height);
+        let btnPadding = height * .02;
+        let btnY = height - btnPadding - control_height;
+        controls_container.style = "position:absolute; left: " + btnPadding + "px; top:" + btnY + "px;";
+    }
+
 
     if (drawScreen.getDrawMode()) { // redraw users rendition
-        ctx.fillStyle = "rgb(" + primary_bg + ")";
-        ctx.fillRect(0, 0, width, height);
-        let inputs = drawScreen.getInputs();
-
-        if (inputs.length == 0) {
-            drawScreen.drawDrawHere();
-        } else {
-            ctx.beginPath();
-            ctx.moveTo(inputs[0][0], inputs[0][1]);
-            for (let i = 1; i < inputs.length; i++) {
-            ctx.lineTo(inputs[i][0], inputs[i][1]);
-            }
-            ctx.strokeStyle = "rgb(" + approx_color + ")";
-            ctx.lineWidth = drawLineWidth;
-            ctx.stroke();
-            ctx.closePath();
-        }
-        if (drawScreen.sampleScreen) {
-            drawScreen.initSampleScreen();
-        }
+        drawScreen.display();
     } else if (displayScreen.approxOnlyToggle) {
         displayScreen.drawApproximation();
     }

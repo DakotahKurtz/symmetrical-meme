@@ -55,77 +55,84 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
     Suspendisse leo tortor, feugiat ut ligula non, congue lobortis tortor. Morbi pellentesque erat metus, sed condimentum nisi consequat vel. Aliquam efficitur, mauris ornare fringilla dapibus, augue est fermentum eros, malesuada feugiat mauris dolor ut metus. Duis ac dui in magna viverra gravida. Maecenas convallis facilisis nulla, a imperdiet nisl dignissim non. Etiam viverra at lorem sed gravida. Nam semper condimentum maximus. Suspendisse suscipit posuere volutpat.
             </p>
             <div class="display-container" id = "epi_container">
-                <div class="canvas-container">
                     <canvas id="canvas_interactive">
                         A graphic displaying rotating epicycles that generate an image.
                     </canvas>
-                </div>
-                <div class="controls-container" id = "epi_controls_container">
-                    <div class="control-column" id = "draw_control_div">
-                        <div class="control">
-                            <input type="button" value="Finished" id="btn_finished">
-                        </div>
-                        <div class="control" id="erase_div">
-                            <input type = "button" value = "Erase" id="btn_erase">
-                        </div>
-                    </div>
-                    <div class="control-column" id="draw_options_div">
-                        <div class="control">
-                            <input type="button" value="Sample Drawings" id="btn_samples">
-                        </div>
-                        <div class="control">
-                            <label class="switch">
-                                <div class = "switch_label">Closed Form</div>       
-                                <input type="checkbox" class="canvas_checkbox" id="closed_form_toggle"  for="closed_form" checked>
-                                <div class="slidebox"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class ="control-column" id="display_control_div">
-                        <div class="control">
-                            <input type="button" value="Back" id="btn_back">
-                        </div>
-                    </div>
-                    <div class="control-column" id="display_slider_div">
-                        <div class="control" id="focus_div">
-                            <label for="focus">
-                            Focus On<br>
-                            <input type = "range" class = "slider" id="range_focus_selector" name="focus" value = "0" step = "1">
-                            </label>
-                        </div>
+                    <div class="controls-container-container" id="control-main">
+                        <input type="button" class="minimize-button " value="Hide" id="min-btn">
 
-                        <div class = "control" id="adjust_n_div">
-                            <label for="n_adjuster">
-                                Number of Circles<br>
-                            <input type="range" class = "slider" id="range_adjust_n" name="n_adjuster" min="2" max="300" value = "5" step = "1">
-                            </label>
-                        </div>
+                        <div class="controls-container" id = "epi_controls_container">
+                            <!-- <div class="control-column" id = "draw-min-col">
+                                <div class="control" id="draw-min-div">
+                                    <input type="button" class="canvas_btn" value="hide">
+                                </div>
+                            </div> -->
+                            <div class="control-column" id = "draw_control_div">
+                                <div class="control">
+                                    <input type="button" class="canvas_btn" value="Finished" id="btn_finished">
+                                </div>
+                                <div class="control" id="erase_div">
+                                    <input type ="button" class="canvas_btn" value = "Erase" id="btn_erase">
+                                </div>
+                            </div>
+                            <div class="control-column" id="draw_options_div">
+                                <div class="control">
+                                    <input type="button" class="canvas_btn" value="Sample Drawings" id="btn_samples">
+                                </div>
+                                <div class="control">
+                                    <label class="switch">
+                                        <div class = "switch_label">Clean Up</div>       
+                                        <input type="checkbox" class="canvas_checkbox" id="clean-up-toggle"  for="clean-up" checked>
+                                        <div class="slidebox"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class ="control-column" id="display_control_div">
+                                <div class="control">
+                                    <input type="button" class="canvas_btn" value="Back" id="btn_back">
+                                </div>
+                            </div>
+                            <div class="control-column" id="display_slider_div">
+                                <div class="control" id="focus_div">
+                                    <label for="focus">
+                                    Focus On<br>
+                                    <input type = "range" class = "slider" id="range_focus_selector" name="focus" value = "0" step = "1">
+                                    </label>
+                                </div>
 
+                                <div class = "control" id="adjust_n_div">
+                                    <label for="n_adjuster">
+                                        Number of Circles<br>
+                                    <input type="range" class = "slider" id="range_adjust_n" name="n_adjuster" min="2" max="300" value = "5" step = "1">
+                                    </label>
+                                </div>
+
+                            </div>
+                            <div class="control-column" id="display_toggle_div">
+                                <div class = "control" id="circle_toggle_div">
+                                    <label class="switch">
+                                    <div class = "switch_label">Circles</div>       
+                                    <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" checked>
+                                    <div class="slidebox"></div>
+                                </label>
+                                </div>
+                                <div class="control" id="approx_toggle_div">
+                                    <label class="switch">
+                                        <div class = "switch_label">Stop</div>       
+                                        <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle">
+                                    <div class="slidebox"></div>
+                                </label>
+                                </div>
+                                <div class="control" id="goal_toggle_div">
+                                    <label class="switch">
+                                        <div class = "switch_label">Goal</div>       
+                                        <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" checked>
+                                        <div class="slidebox"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="control-column" id="display_toggle_div">
-                        <div class = "control" id="circle_toggle_div">
-                            <label class="switch">
-                            <div class = "switch_label">Circles</div>       
-                            <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" checked>
-                            <div class="slidebox"></div>
-                        </label>
-                        </div>
-                        <div class="control" id="approx_toggle_div">
-                            <label class="switch">
-                                <div class = "switch_label">Stop</div>       
-                                <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle">
-                            <div class="slidebox"></div>
-                        </label>
-                        </div>
-                        <div class="control" id="goal_toggle_div">
-                            <label class="switch">
-                                <div class = "switch_label">Goal</div>       
-                                <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" checked>
-                                <div class="slidebox"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
             </div>
             <br/><br/>
             <p class="article-p">
