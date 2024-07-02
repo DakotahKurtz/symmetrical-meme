@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset=utf-8 />
+
     <link rel="stylesheet" href="styles.css" />
 
     <title>Canvas tutorial</title>
@@ -91,22 +93,26 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
                                 <div class="control">
                                     <input type="button" class="canvas_btn" value="Back" id="btn_back">
                                 </div>
+                                <div class="control">
+                                    <label class="switch">
+                                        <div class = "switch_label">Follow</div>       
+                                        <input type ="checkbox" class="canvas_checkbox" id="follow-toggle">
+                                    <div class="slidebox"></div>
+                                    </label>
+                                </div>
                             </div>
                             <div class="control-column" id="display_slider_div">
                                 <div class="control" id="focus_div">
-                                    <label for="focus">
-                                    Focus On<br>
-                                    <input type = "range" class = "slider" id="range_focus_selector" name="focus" value = "0" step = "1">
-                                    </label>
+                                    <input type="button" class="canvas_btn" value="-" id="zoom-out">
+                                    <label class="paired-btn-label">Zoom</label>
+                                    <input type="button" class="canvas_btn" value="+" id="zoom-in">
                                 </div>
 
-                                <div class = "control" id="adjust_n_div">
-                                    <label for="n_adjuster">
-                                        Number of Circles<br>
-                                    <input type="range" class = "slider" id="range_adjust_n" name="n_adjuster" min="2" max="300" value = "5" step = "1">
-                                    </label>
+                                <div class="control">
+                                    <input type="button" class="canvas_btn" value="-" id="remove-vector">
+                                    <label class="paired-btn-label">Vector Count</label>
+                                    <input type="button" class="canvas_btn" value="+" id="add-vector">
                                 </div>
-
                             </div>
                             <div class="control-column" id="display_toggle_div">
                                 <div class = "control" id="circle_toggle_div">
@@ -121,7 +127,7 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
                                         <div class = "switch_label">Stop</div>       
                                         <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle">
                                     <div class="slidebox"></div>
-                                </label>
+                                    </label>
                                 </div>
                                 <div class="control" id="goal_toggle_div">
                                     <label class="switch">

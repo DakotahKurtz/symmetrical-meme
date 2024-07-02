@@ -1,11 +1,3 @@
-class OverHead {
-    visible = false;
-
-    constructor() {
-
-    }
-}
-
 
 class DrawScreen {
 
@@ -644,9 +636,11 @@ class Camera {
     #tickRate;
     #saveState;
     #saved;
+    #isFollowing;
     tInc;
 
     constructor(currentTick) {
+
 
         this.#zoom = 1;
         this.#focusedOn = 0;
@@ -654,8 +648,12 @@ class Camera {
         this.#ty = 0;
         this.#tickRate = currentTick;
         this.#saved = false;
+        this.#isFollowing = false;
         this.tInc = default_T_Inc;
     }
+
+
+
 
     save() {
         this.#saved = true;
@@ -666,6 +664,7 @@ class Camera {
         this.#saveState.#ty = this.#ty;
         this.#saveState.#tickRate = this.#tickRate;
         this.#saveState.tInc = this.tInc;
+        this.#saveState.#isFollowing = this.#isFollowing;
     }
 
     load() {
@@ -679,6 +678,7 @@ class Camera {
         this.#ty = this.#saveState.#ty;
         this.#tickRate = this.#saveState.#tickRate;
         this.tInc = this.#saveState.tInc;
+        this.#isFollowing = this.#saveState.#isFollowing;
     }
 
     reset() {
@@ -686,79 +686,46 @@ class Camera {
         this.#focusedOn = 0;
         this.#tx = 0;
         this.#ty = 0;
+        this.#isFollowing = false;
         this.#tickRate = defaultTick
         this.tInc = default_T_Inc;
 
     }
 
-    zoomTo(inUse) {
-        this.#focusedOn = inUse;
-        console.log("in ZoomTo focused on: " + this.#focusedOn);
-        if (inUse == 0) {
-            this.reset();
-            console.log("inUse == 0");
-            return;
-        }
+    // zoomTo(inUse) {
+    //     this.#focusedOn = inUse;
+    //     console.log("in ZoomTo focused on: " + this.#focusedOn);
+    //     if (inUse == 0) {
+    //         this.reset();
+    //         console.log("inUse == 0");
+    //         return;
+    //     }
 
-        this.updateZoom();
-    }
+    //     this.updateZoom();
+    // }
 
     zoomIn() {
-        if (this.#focusedOn + 1 >= numVectInUse) {
-            return false;
-        }
-
-        this.#focusedOn++;
-        this.updateZoom();
+        let previousZoom = this.#zoom;
+        this.#zoom = Math.min(this.#zoom * 1.1, 50);
+        this.updateZoom(previousZoom);
+        console.log("Zoom IN");
 
         return true;
     }
 
     zoomOut() {
-        if (this.#focusedOn <= 0) {
-            return false;
-        }
+        let previousZoom = this.#zoom;
 
-        this.#focusedOn--;
-
-        if (this.#focusedOn == 0) {
-            this.reset();
-            return true;
-        }
-
-        this.updateZoom();
+        this.#zoom = Math.max(this.#zoom / 1.1, .4);
+        this.updateZoom(previousZoom);
         return true;
     }
 
-    updateZoom() {
-        let previousZoom = this.#zoom;
-
-        let range = displayScreen.vectors[this.#focusedOn].radius * 2;
-        this.#zoom = (Math.min(width, height) - (breathing_room * 2)) / range;
-
-        if (this.#zoom > (Math.min(width, height) / 10)) {
-            this.#zoom = previousZoom;
-            return;
-        }
-
-        console.log("focused: " + this.#focusedOn);
-        if (this.#focusedOn == 0) {
-            this.#tickRate = defaultTick;
-            console.log("HERE");
-            stopAnimationWrapper(displayScreen.timerId);
-            displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
-            return;
-        }
-        // let tRate = this.#tickRate * (this.#zoom / previousZoom);
-
-        // if (this.#withinRateRange(tRate)) {
-        //     this.#tickRate = tRate;
-            // stopAnimationWrapper(displayScreen.timerId);
-            // displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
-        // }
+    updateZoom(previousZoom) {
 
         stopAnimationWrapper(displayScreen.timerId);
-        this.tInc = this.tInc * (previousZoom / this.#zoom);
+
+        this.tInc = Math.max(this.tInc * (previousZoom / this.#zoom), default_T_Inc * .1);
 
         displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
     }
@@ -766,6 +733,13 @@ class Camera {
 
 
     center(x, y, dim) {
+
+                // if (camera.getFocusedOn() != 0) {
+        //     camera.center(circleCenters[camera.getFocusedOn() - 1][0] + (width / 2), (height / 2) - circleCenters[camera.getFocusedOn() - 1][1]);
+        // }
+        // camera.center((width / 2), (height / 2));
+        x += (width / 2);
+        y = (height / 2) - y;
 
         this.#tx = (width / 2) - (x * this.#zoom);
         this.#ty = (height / 2) - (y * this.#zoom);
@@ -779,8 +753,30 @@ class Camera {
     getTy() {return this.#ty;}
     getZoom() {return this.#zoom}
     getFocusedOn() {return this.#focusedOn}
+    setFocusedOn(focused) {this.#focusedOn = focused;}
+
     getTickRate() {return this.#tickRate}
     setTickRate(tickRate) {this.#tickRate = tickRate;} 
+    setIsFollowing(b, focusedOn) {
+        this.#isFollowing = b;
+        let previousZoom = this.#zoom;
+
+        if (b) {
+            this.#focusedOn = focusedOn;
+            // calculate new zoom
+            let dim = displayScreen.vectors[focusedOn].radius * 2;
+            console.log("dim: " + dim);
+            let spacing = width * .2;
+            this.#zoom = (width - 2 * spacing) / dim;
+            this.updateZoom(previousZoom);
+
+        } else {
+            this.#focusedOn = 0;
+            this.#zoom = 1;
+            this.tInc = default_T_Inc;
+        }
+    }
+    isFollowing() {return this.#isFollowing;}
 }
 
 class DisplayScreen {
@@ -841,11 +837,9 @@ class DisplayScreen {
         }
     
         this.transformation = new Transformation(this.scaledInputs);
-        adjustNSlider.max = Math.min(this.transformation.vectors.length, maxNumberOfVectors);
+        // adjustNSlider.max = Math.min(this.transformation.vectors.length, maxNumberOfVectors);
         this.numVectInUse = Math.min(this.transformation.vectors.length, defaultNumOfVectors);
-        adjustNSlider.value = this.numVectInUse;
-        focusSlider.max = this.numVectInUse - 1;
-        focusSlider.value = 0;
+        // adjustNSlider.value = this.numVectInUse;
         this.vectors = this.transformation.getVectors(this.numVectInUse);
 
         scaleCanvas();
@@ -883,19 +877,22 @@ class DisplayScreen {
     }
     
     drawEpicycles() { 
-    
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = "rgb(" + primary_bg + ")";
         ctx.fillRect(0, 0, width, height);
     
-        displayScreen.drawGoal();   
     
         // calculate the centers of every circle
         let circleCenters = displayScreen.getVectorEndpoints(displayScreen.currT);
     
-        if (camera.getFocusedOn() != 0) {
-            camera.center(circleCenters[camera.getFocusedOn() - 1][0] + (width / 2), (height / 2) - circleCenters[camera.getFocusedOn() - 1][1]);
+        if (camera.isFollowing()) {
+            camera.center(circleCenters[camera.getFocusedOn()][0], circleCenters[camera.getFocusedOn()][1]);
+        } else {
+            camera.center(0, 0);
         }
+
+        displayScreen.drawGoal();   
+
     
         if (displayScreen.circleShownToggle) {
             ctx.lineWidth = circleUnfocusedLineWidth;
@@ -1012,6 +1009,15 @@ class DisplayScreen {
     
         return coords;
     }
+
+    setNumVectorsInUse(num) {
+        this.numVectInUse = Math.min(Math.max(2, num), maxNumberOfVectors);
+        this.vectors = this.transformation.getVectors(this.numVectInUse);
+
+        if (this.numVectInUse <= camera.getFocusedOn()) {
+            camera.setFocusedOn(this.numVectInUse - 1);
+        }
+    }
     
     getVectorEndpoints(time) {
         let endpoints = [];
@@ -1066,11 +1072,53 @@ class DisplayScreen {
         return scaled;
     }
 
-    updateNumVectors(num) {
-        this.numVectInUse = num;
-        this.vectors = this.transformation.getVectors(num);
+    // updateNumVectors(num) {
+    //     this.numVectInUse = num;
+    //     this.vectors = this.transformation.getVectors(num);
+    // }
+
+}
+
+class ClickAndHold {
+
+    constructor(target, callback, isSteady) {
+        this.target = target;
+        this.callback = callback;
+        this.isHeld = false;
+        this.activeHoldTimeoutId = null;
+        this.isSteady = isSteady;
+
+        ["mousedown", "touchstart"].forEach(type => {
+            this.target.addEventListener(type, this._onHoldStart.bind(this));
+        });
+
+        ["mouseup", "mouseleave", "mouseout", "touchend", "touchcancel"].forEach(type => {
+            this.target.addEventListener(type, this._onHoldEnd.bind(this));
+        });
     }
 
+    _onHoldStart() {
+        this.isHeld = true;
+        if (this.isSteady) {
+            this.activeHoldTimeoutId = this.fireSteady();
+        }
+    }
+
+    fireSteady() {
+        let x = setTimeout(() => {
+            if (this.isHeld) {
+                this.callback();
+                return this.fireSteady();
+            } else {
+                return;
+            }
+        }, 1000);
+    }
+
+    _onHoldEnd() {
+        this.isHeld = false;
+        clearTimeout(this.activeHoldTimeoutId);
+    }
 }
 
 const canvas = document.getElementById("canvas_interactive");
@@ -1160,7 +1208,15 @@ function main() {
 var height;
 var width;
 
+// function inner(text) {
+//     console.log(text);
+// }
 
+// function outer(fx, text) {
+//     fx(text);
+// }
+
+// outer(inner, "Testing");
 
 main();
 
@@ -1171,12 +1227,8 @@ var displayScreen = new DisplayScreen();
 document.getElementById("clean-up-toggle").addEventListener("change", cleanUpToggleListener);
 document.getElementById("epi_controls_container").addEventListener("animationend", controlAnimListener);
 
-
-focusSlider = document.getElementById("range_focus_selector");
-focusSlider.addEventListener("input", focusSliderListener);
-
-adjustNSlider = document.getElementById("range_adjust_n");
-adjustNSlider.addEventListener("input", adjustNSliderListener);
+// adjustNSlider = document.getElementById("range_adjust_n");
+// adjustNSlider.addEventListener("input", adjustNSliderListener);
 
 
 window.addEventListener('resize', scaleCanvas);
@@ -1187,14 +1239,54 @@ document.getElementById("show_goal_toggle").addEventListener('change', showGoalT
 document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
 document.getElementById("circle_visibility_toggle").addEventListener('change', function(){displayScreen.circleShownToggle = this.checked});
 
+document.getElementById("follow-toggle").addEventListener('change', followToggleListener);
+
 document.getElementById("min-btn").addEventListener("click", anim);
+
+
+new ClickAndHold(document.getElementById("zoom-in"), () => {camera.zoomIn()}, true);
+new ClickAndHold(document.getElementById("zoom-out"), () => {camera.zoomOut()}, true);
+new ClickAndHold(document.getElementById("add-vector"), addVectorListener, true);
+new ClickAndHold(document.getElementById("remove-vector"), removeVectorListener, true);
+
+function pressListener(fx) {
+    start = new Date();
+
+    fx();
+}
+
+function addVectorListener() {
+    updateNumVectors(displayScreen.numVectInUse + 1);
+}
+
+function removeVectorListener() {
+    updateNumVectors(displayScreen.numVectInUse - 1);
+}
+
+function updateNumVectors(num) {
+    if (displayScreen.approxOnlyToggle) {
+
+        displayScreen.setNumVectorsInUse(num);
+        displayScreen.drawApproximation();
+    } else {
+
+        stopAnimationWrapper(displayScreen.timerId);
+
+        displayScreen.setNumVectorsInUse(num);
+
+        displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
+    }
+}
+
+function followToggleListener() {
+    camera.setIsFollowing(this.checked, displayScreen.numVectInUse - 1);
+}
 
 function cleanUpToggleListener() {
     drawScreen.cleanUp = !drawScreen.cleanUp;
     if (drawScreen.getDrawMode()) {
         drawScreen.display();
     }
-
 }
 
 function controlAnimListener() {
@@ -1242,23 +1334,6 @@ function anim() {
         element.classList.remove("un-minimize-class");
         container.classList.remove("slide-back-class");
     }
-//     if (element.classList.contains('classname')) {
-//         element.classList.remove('classname'); // reset animation
-
-//     } else {
-
-// element.classList.add('classname'); // start animation
-
-// // void element.offsetWidth; // trigger reflow
-// // void label.offsetWidth;
-//     }
-//     if (label.classList.contains('controlclass')) {
-//         label.classList.remove('controlclass') 
-//     }
-//     else {
-//             label.classList.add('controlclass');
-
-//         }
 
 
 }
@@ -1272,6 +1347,8 @@ function loadListener() {
 function backButtonListener() {
     stopAnimationWrapper(displayScreen.timerId);
     drawScreen.initDrawMode();
+    document.getElementById("follow-toggle").checked = false;
+
 }
 
 
@@ -1292,31 +1369,19 @@ function approxOnlyToggleListener() {
         camera.save();
         camera.reset();
 
-        document.getElementById("range_focus_selector").disabled = true;
         displayScreen.drawApproximation();
     } else {
         stopAnimationWrapper(displayScreen.timerId);
 
-        document.getElementById("range_focus_selector").disabled = false;
         camera.load();
 
-        displayScreen.updateNumVectors(adjustNSlider.value);
+        displayScreen.setNumVectorsInUse(displayScreen.numVectInUse);
 
-        // both attributes of the range elements below are STRINGS, not Numbers - comparison is weird in Javascript if you're
-        // forgetful. *1 to convert to string
-        if ((focusSlider.value * 1) >= (adjustNSlider.value * 1)) {
-            focusSlider.value = (displayScreen.numVectInUse - 1);
-            camera.zoomTo(displayScreen.numVectInUse - 1);
-        }
-
-        focusSlider.max = (displayScreen.numVectInUse - 1);
         displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 }
 
-function focusSliderListener() {
-    camera.zoomTo(focusSlider.value);
-}
+
 
 function startAnimationWrapper(fx, tRate) {
     
@@ -1333,36 +1398,7 @@ function stopAnimationWrapper(t) {
     displayScreen.running = false;
 }
 
-function adjustNSliderListener() {
-    if (displayScreen.approxOnlyToggle) {
-        // displayScreen.numVectInUse = adjustNSlider.value;
-        // displayScreen.vectors = displayScreen.transformation.getVectors(displayScreen.numVectInUse);
-        displayScreen.updateNumVectors(adjustNSlider.value);
-        displayScreen.drawApproximation();
-    } else {
 
-        stopAnimationWrapper(displayScreen.timerId);
-
-        // displayScreen.numVectInUse = adjustNSlider.value;
-        // displayScreen.vectors = displayScreen.transformation.getVectors(displayScreen.numVectInUse);
-        displayScreen.updateNumVectors(adjustNSlider.value);
-
-        focusSlider.max = displayScreen.numVectInUse - 1;
-
-        if (focusSlider.value >= (displayScreen.numVectInUse - 1)) {
-            focusSlider.value = (displayScreen.numVectInUse - 1);
-
-            camera.zoomTo(displayScreen.numVectInUse - 1);
-
-            focusSlider.max = (displayScreen.numVectInUse - 1);
-
-        }
-
-        displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
-    }
-
-
-}
 
 function scaleCanvas() {
     let epi_container = document.getElementById("epi_container");

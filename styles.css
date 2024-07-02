@@ -150,16 +150,22 @@ main {
 
   }
 
-
+.paired-btn-label {
+  --padding: 10%;
+  padding-left: var(--padding);
+  padding-right: var(--padding);
+}
 
   .control {
     /* display: block; */
     /* font-family: Georgia, 'Times New Roman', Times; */
-    border: none;
+    border: 1px white solid;
     background-color: inherit;
 
     cursor: pointer;
-    display: inline-block; 
+    display: flex; 
+    justify-content: center;
+    align-content: center;
     /* color: var(--white); */
     /* margin: 10px 0;*/
     padding: 4px; 
