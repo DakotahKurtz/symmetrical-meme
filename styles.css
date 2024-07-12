@@ -1,9 +1,12 @@
 :root {
   --translateX: 0px;
   --translateY: 0px;
+  --opacity: .5;
 
   --controlsTransparency: .8;
-  --white: #f6fdfa;
+  --white: rgb(246 253 250);
+  --form-control-color: rgb(54 53 55/70%);
+
   }
 
 @media only screen and (max-width: 1200px) {
@@ -31,30 +34,35 @@ p {
     padding: 20px;
 }
 
+.article-p {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
 main {
-    display: flex;
-    /* width: 500px; */
+    /* display: flex;
+    width: 500px;
     flex: 3 1 auto;
-    flex-direction: column;
-    border: 3px dotted rgb(230, 142, 142);
     padding: 10px 50px 10px 10px;
+*/
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-items: center;
+    justify-items: center; 
+    border: 3px dotted rgb(230, 142, 142);
+
     
 }
+
+
 
 .display-container {
   display: block;
   position: relative;
     border: 6px solid rgb(250 112 112);
-    /* background: rgb(254 253 237); */
-    /* background: rgb(250 112 112); */
-    
-
-    /* padding-bottom: 10px; */
 }
 
-#canvas_interactive {
+#canvas-interactive {
     border-bottom: 3px solid rgb(250 112 112);
     width: 100%;
     flex: 1;
@@ -62,186 +70,170 @@ main {
     padding-right: 0;
     margin-left: auto;
     margin-right: auto;
-    /* display: block;
-    width: 500px;
-    height: 500px; */
+
   }
+
+  .controls-container-container {
+    /* position: flex; */
+    position: absolute;
+    left: 15%;
+    top: 75%;
+    font-size: 16px;
+    font-family: Georgia, 'Times New Roman', Times;
+    color: var(--white) ;
+    width: 80%;
+    opacity: 1;
+  }
+
+  .opacity-class {
+    opacity: var(--opacity);
+  }
+
+  .opacity-anim:hover {
+   opacity: 1;
+  }
+  
+  .controls-container {
+  
+      font-family: Georgia, 'Times New Roman', Times;
+      font-size: inherit;
+  
+      background: rgb(71 91 90 / var(--controlsTransparency));  
+      border-radius: 10px;
+      border: 4px solid rgb(250 112 112);
+      flex-wrap: wrap;
+      justify-content: space-evenly; 
+    }
+  
+    .control-row {
+      padding: 2px;
+      padding-left: 4px;
+      padding-right: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      padding: auto;
+      justify-content:space-around;
+      align-content: center;
+    }
 
   .minimize-button {
 
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     border: none; 
     cursor: pointer;
 
     color: var(--white);
     background-color: rgb(71 91 90/var(--controlsTransparency));
     border-radius: 4px;
-    /* background: plum; */
     border: 2px solid rgb(250 112 112);
     border-bottom: 0px;
   }
 
-  .canvas_btn {
+  .canvas-btn {
     font-family: inherit;
     font-size: inherit;
     border: none; 
     background-color: inherit;
     cursor: pointer;
+    /* padding: 4px; */
+    width: 100%;
 
     color: var(--white);
     display: inline-block;    
    }
 
-   .canvas_btn:disabled, .switch:disabled, .minimize-button:disabled {
+   .switch {
+    padding-right: 1em;
+    display: flex;
+    gap: .2em;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .canvas-checkbox {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: inherit;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1.5em;
+    height: 1.5em;
+    border: 0.05em solid currentColor;
+    border-radius: 0.15em;
+    transform: translateY(0.075em); 
+    place-content: center;
+    display: grid; 
+  }
+
+  .toggle-label {
+    text-decoration: line-through;
+  }
+
+   .canvas-btn:disabled, .canvas-checkbox:disabled + .toggle-label, .minimize-button:disabled {
     color:#9c9c9c;
     cursor: not-allowed;
    }
 
-   /* .minimize-button:hover:not([disabled]) {
-    color: rgb(250 112 112);
-
-   } */
-   /* .canvas_btn:hover:not([disabled]) {
-    color: rgb(250 112 112);
-   } */
-
-   .switch:hover:not([disabled]), .canvas_btn:hover:not([disabled]),  .minimize-button:hover:not([disabled]) {
+   .switch:hover:not([disabled]), .canvas-btn:hover:not([disabled]),  .minimize-button:hover:not([disabled]) {
     /* color: rgb(250 112 112); */
     box-shadow: 0px 0 3px 3px rgb(0, 0, 0, .5);
 
    }
-
-.controls-container-container {
-  position: absolute;
-  left: 5%;
-  top: 75%;
-  font-size: 18px;
-  font-family: Georgia, 'Times New Roman', Times;
-  color: var(--white);
-
-
-  width: 70%;
-}
-
-.controls-container {
-
-    font-family: Georgia, 'Times New Roman', Times;
-    font-size: inherit;
-
-    background: rgb(71 91 90 / var(--controlsTransparency));
-    /* color: #fff; */
-
-    border-radius: 10px;
-    /* background: plum; */
-    border: 4px solid rgb(250 112 112);
-    /* border: 2px solid rgb(0, 0, 0); */
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly; 
+  
+  .canvas-checkbox::before {
+    content: "";
+    width: 1em;
+    height: 1em;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em var(--form-control-color);
+    transform-origin: bottom left;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  
+  .canvas-checkbox:checked::before {
+    transform: scale(1);
   }
 
-  .control-column {
-    flex-direction: column;
-    padding: auto;
-    justify-content: space-between;
-    /* align-content: baseline; */
-    /* border: 2px solid rgb(0, 0, 0); */
-
+  input[type=checkbox]:checked + label.toggle-label {
+    text-decoration: none;
   }
+
+
+
 
 .paired-btn-label {
-  --padding: 10%;
+  --padding: 7%;
   padding-left: var(--padding);
   padding-right: var(--padding);
+  display: flex;
+  align-self: center;
+
 }
 
   .control {
-    /* display: block; */
-    /* font-family: Georgia, 'Times New Roman', Times; */
-    border: 1px white solid;
     background-color: inherit;
-
-    cursor: pointer;
     display: flex; 
-    justify-content: center;
-    align-content: center;
-    /* color: var(--white); */
-    /* margin: 10px 0;*/
     padding: 4px; 
-    /* width: 90%; */
-    /* flex: 1 1 0; */
-        /* border: 1px solid rgb(13, 238, 238); */
-
   }
 
-  .article-p {
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
-
-  .slider {
-    width: 200px;
-  }
-
-  .switch {
+  .paired-control {
+    border: 1px white solid;
+    border-radius: 5px;
+    /* background-color: rgb(71, 91, 90, .6); */
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-  }
-
-  .canvas_checkbox {
-    display: none;
-  }
-
-  .slidebox {
-    width: 30px;
-    height: 15px;
-    
-    background-color: lightgray;
-    border-radius: 10px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    /* border: 1px solid transparent; */
-    transition: .3s;
-    box-shadow: 0 0 5px 0 rgb(0, 0, 0, 0.25) inset;
-    cursor: pointer;
-    flex: 0 0 0 0;
+    justify-content: center;
+    padding-left: 3%;
+    padding-right: 3%;
 
   }
 
-  .switch_label {
-    padding-right: 10px;
+  .paired-btn {
+    font-size: 1.8em;
+    color: var(--form-control-color);
   }
-
-   .slidebox::before {
-    content: '';
-    display: block;
-    width: 100%;
-    height: 100%;
-    background-color: var(--white);
-    transform: translateX(-15px);
-    border-radius: 10px;
-    transition: .3s;
-    /* box-shadow: 0 0 10px 3px rgba(232, 5, 5, 0.25); */
-  }
-
-  .canvas_checkbox:checked ~ .slidebox::before {
-    transform: translateX(15px);
-    box-shadow: 0 0 3px 3px rgb(0, 0, 0, 0.25);
-  }
-
-  .canvas_checkbox:checked ~ .slidebox {
-    background-color: #3F7CAC;
-  }
-
-  .canvas_checkbox:active ~ .slidebox::before {
-    transform: translate(0);
-  } 
-  
-
 
   .minimize-class {
     animation: 1s minimize 1;
@@ -291,12 +283,12 @@ main {
   @keyframes minimize {
     from {
       transform: scaleX(1) scaleY(1);
-      opacity: 1;
+      opacity: var(--opacity);
     }
 
     80% {
-      transform: scaleX(.5) scaleY(.2);
-      opacity: .9;
+      transform: scaleX(.3) scaleY(.2);
+      opacity: calc(var(--opacity) * .9);
     }
 
     to {

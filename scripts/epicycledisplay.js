@@ -1,19 +1,9 @@
 
 class DrawScreen {
 
-    prevX;
-    prevY;
-    currX;
-    currY;
-    rawInputs;
-    mouseInputs;
-    sampleChosen;
-    sampleScreen;
-    clickBoxes;
-    points;
+
     #drawMode = false;
-    drawnFlag = false;
-    cleanUp = true;
+
 
     constructor() {
         this.prevX = this.prevY = this.currX = this.currY = 0;
@@ -22,6 +12,8 @@ class DrawScreen {
         
         this.sampleChosen = -1;
         this.sampleScreen = false;
+        this.drawnFlag = false;
+        this.cleanUp = true;
 
         this.points = [];
         var samples = [];
@@ -31,9 +23,9 @@ class DrawScreen {
             this.points.push(new Points(samples[i]));
         }
 
-        document.getElementById("btn_finished").addEventListener("click", this.finishedButtonListener);
-        document.getElementById("btn_erase").addEventListener("click", this.eraseButtonListener);
-        document.getElementById("btn_samples").addEventListener("click", this.samplesButtonListener);
+        document.getElementById("btn-finished").addEventListener("click", this.finishedButtonListener);
+        document.getElementById("btn-erase").addEventListener("click", this.eraseButtonListener);
+        document.getElementById("btn-samples").addEventListener("click", this.samplesButtonListener);
     }
 
     samplesButtonListener() {
@@ -49,6 +41,7 @@ class DrawScreen {
         displayScreen.init();
     
         if (displayScreen.approxOnlyToggle) {
+
             displayScreen.drawApproximation();
         } else {
             displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
@@ -57,8 +50,8 @@ class DrawScreen {
       }
 
     sampleScreenMouseListener(e) {
-        let x = DrawScreen.getMousePos(canvas, e).x;
-        let y = DrawScreen.getMousePos(canvas, e).y;
+        let x = DrawScreen.getMousePos(epicycleCanvas, e).x;
+        let y = DrawScreen.getMousePos(epicycleCanvas, e).y;
 
         let hovered = -1;
         let i = 0;
@@ -78,7 +71,7 @@ class DrawScreen {
         ctx.fillRect(0, 0, width, height);
         drawScreen.mouseInputs = [];
         drawScreen.drawDrawHere();
-        document.getElementById("btn_finished").disabled = true;
+        document.getElementById("btn-finished").disabled = true;
     }
     
     initSampleScreen(hovered) {
@@ -228,8 +221,8 @@ class DrawScreen {
     }
     
     selectSample(e) {
-        let x = DrawScreen.getMousePos(canvas, e).x;
-        let y = DrawScreen.getMousePos(canvas, e).y;
+        let x = DrawScreen.getMousePos(epicycleCanvas, e).x;
+        let y = DrawScreen.getMousePos(epicycleCanvas, e).y;
 
         console.log("x, y: " + x + ", " + y + " | length " + drawScreen.clickBoxes.length);
     
@@ -276,16 +269,19 @@ class DrawScreen {
         this.mouseInputs = [];
         this.sampleChosen = -1;
 
-        // scaleCanvas();
-    
-        document.getElementById("control-main").style = "position:absolute;";;
-        document.getElementById("draw_control_div").style.display="flex";
-        document.getElementById("draw_options_div").style.display="flex";
-    
-        document.getElementById("display_slider_div").style.display="none";
-        document.getElementById("display_toggle_div").style.display = "none";
-        document.getElementById("display_control_div").style.display="none";
-        document.getElementById("btn_finished").disabled = true;
+        let main = document.getElementById("control-main");
+        main.style.display="absolute";
+        if (main.classList.contains("opacity-class")) {
+            main.classList.remove("opacity-class");
+        }
+
+        let root = document.documentElement;
+        root.style.setProperty('--opacity', 1);
+
+        document.getElementById("draw-control-div").style.display="flex";
+        document.getElementById("display-control-div").style.display="none";
+        document.getElementById("display-options-div").style.display="none";
+        document.getElementById("btn-finished").disabled = true;
         scaleCanvas();
 
     
@@ -296,6 +292,7 @@ class DrawScreen {
     display() {
         ctx.fillStyle = "rgb(" + primary_bg + ")";
         ctx.fillRect(0, 0, width, height);
+
 
         if (this.mouseInputs.length == 0) {
             this.drawDrawHere();
@@ -325,7 +322,7 @@ class DrawScreen {
             ctx.fillStyle = "rgb(" + primary_bg + ")";
             ctx.fillRect(0, 0, width, height);
             drawScreen.mouseInputs = [];
-            document.getElementById("btn_finished").disabled = false;
+            document.getElementById("btn-finished").disabled = false;
         }
 
         ctx.clearRect(0, 0, width, height);
@@ -334,16 +331,17 @@ class DrawScreen {
 
         this.prevX = this.currX;
         this.prevY = this.currY;
-        this.currX = DrawScreen.getMousePos(canvas, e).x;
-        this.currY = DrawScreen.getMousePos(canvas, e).y;
+        this.currX = DrawScreen.getMousePos(epicycleCanvas, e).x;
+        this.currY = DrawScreen.getMousePos(epicycleCanvas, e).y;
         this.drawnFlag = true;
+
+        drawScreen.mouseInputs.push([this.currX, this.currY]);
     
         ctx.strokeStyle = "rgb(" + approx_color + ")";
 
         ctx.beginPath();
         ctx.fillRect(this.currX, this.currY, drawLineWidth, drawLineWidth);
         ctx.closePath();
-        // drawScreen.mouseInputs.push([this.currX, this.currY]);
     }
 
     static distance(x1, y1, x2, y2) {
@@ -440,7 +438,6 @@ class DrawScreen {
             d = DrawScreen.distance(nX, nY, cX, cY);
             if (d > distance) { 
                 let divisions = Math.floor(d / distance);
-                console.log("d | divisions : " + d + " | " + divisions);
 
                 let xInc = (nX - cX) / divisions;
                 let yInc = (nY - cY) / divisions;
@@ -449,10 +446,6 @@ class DrawScreen {
                     cY += yInc;
                     copy.push([cX, cY]);
                 }
-            }
-
-            for (let i = 0; i < copy.length; i++) {
-                console.log(i + " | " + copy[i][0] + ", " + copy[i][1]);
             }
 
             return copy;
@@ -484,12 +477,12 @@ class DrawScreen {
 
         ctx.fillStyle = "rgb(" + nice_blue + ")";
 
-    for (let i = 0; i < points.length; i++) {
-        ctx.beginPath();
-        // console.log(i + " | x, y: " + drawScreen.mouseInputs[i][0] + ", " + drawScreen.mouseInputs[i][1]);
-        ctx.arc(points[i][0], points[i][1], 1, 0, 2 * Math.PI, true);
-        ctx.fill();
-    }
+        for (let i = 0; i < points.length; i++) {
+            ctx.beginPath();
+            // console.log(i + " | x, y: " + drawScreen.mouseInputs[i][0] + ", " + drawScreen.mouseInputs[i][1]);
+            ctx.arc(points[i][0], points[i][1], 1, 0, 2 * Math.PI, true);
+            ctx.fill();
+        }
     }
     
     draw_mouseMove(e) {
@@ -497,8 +490,8 @@ class DrawScreen {
         if (this.drawnFlag) {
             this.prevX = this.currX;
             this.prevY = this.currY;
-            this.currX = DrawScreen.getMousePos(canvas, e).x;
-            this.currY = DrawScreen.getMousePos(canvas, e).y;
+            this.currX = DrawScreen.getMousePos(epicycleCanvas, e).x;
+            this.currY = DrawScreen.getMousePos(epicycleCanvas, e).y;
             drawScreen.mouseInputs.push([this.currX, this.currY]);
 
             ctx.beginPath();
@@ -534,25 +527,25 @@ class DrawScreen {
     }
 
     addDrawMouseListeners() {
-        canvas.addEventListener("mousemove", this.draw_mouseMove);
-        canvas.addEventListener("mousedown", this.draw_mouseDown);
-        canvas.addEventListener("mouseup", this.draw_mouseUp);
+        epicycleCanvas.addEventListener("mousemove", this.draw_mouseMove);
+        epicycleCanvas.addEventListener("mousedown", this.draw_mouseDown);
+        epicycleCanvas.addEventListener("mouseup", this.draw_mouseUp);
     }
     
     removeDrawMouseListeners() {
-        canvas.removeEventListener("mousemove", this.draw_mouseMove);
-        canvas.removeEventListener("mousedown", this.draw_mouseDown);
-        canvas.removeEventListener("mouseup", this.draw_mouseUp);
+        epicycleCanvas.removeEventListener("mousemove", this.draw_mouseMove);
+        epicycleCanvas.removeEventListener("mousedown", this.draw_mouseDown);
+        epicycleCanvas.removeEventListener("mouseup", this.draw_mouseUp);
     }
 
     addSampleScreenListeners() {
-        canvas.addEventListener("mousemove", this.sampleScreenMouseListener);
-        canvas.addEventListener("click", this.selectSample);
+        epicycleCanvas.addEventListener("mousemove", this.sampleScreenMouseListener);
+        epicycleCanvas.addEventListener("click", this.selectSample);
     }
 
     removeSampleScreenListeners() {
-        canvas.removeEventListener("mousemove", this.sampleScreenMouseListener);
-        canvas.removeEventListener("click", this.selectSample);
+        epicycleCanvas.removeEventListener("mousemove", this.sampleScreenMouseListener);
+        epicycleCanvas.removeEventListener("click", this.selectSample);
     }
     getDrawMode(){return this.#drawMode;}
     setDrawMode(b){this.#drawMode = b;}
@@ -637,7 +630,13 @@ class Camera {
     #saveState;
     #saved;
     #isFollowing;
-    tInc;
+    static #minZoom = .4;
+    static #maxZoom = 300;
+    static #minTinc = .001;
+    static #tIncLevel = 50;
+    static #maxTickRate = 100;
+    static #tickRateLevelStart = 50;
+    static #tickRateLevelEnd = 100;
 
     constructor(currentTick) {
 
@@ -705,27 +704,62 @@ class Camera {
     // }
 
     zoomIn() {
-        let previousZoom = this.#zoom;
-        this.#zoom = Math.min(this.#zoom * 1.1, 50);
-        this.updateZoom(previousZoom);
-        console.log("Zoom IN");
-
+        // let previousZoom = this.#zoom;
+        // this.#zoom = Math.min(this.#zoom * 1.1, 50);
+        let goalZoom = this.#zoom * 1.1;
+        this.updateZoom(goalZoom);
         return true;
     }
 
     zoomOut() {
-        let previousZoom = this.#zoom;
-
-        this.#zoom = Math.max(this.#zoom / 1.1, .4);
-        this.updateZoom(previousZoom);
+        let goalZoom = this.#zoom / 1.1;
+        this.updateZoom(goalZoom);
         return true;
     }
 
-    updateZoom(previousZoom) {
+    updateZoom(goalZoom) {
+
+        if ((this.#zoom >= Camera.#maxZoom && goalZoom >= Camera.#maxZoom) || (this.#zoom <= Camera.#minZoom && goalZoom <= Camera.#minZoom)) {
+            return;
+        }
 
         stopAnimationWrapper(displayScreen.timerId);
 
-        this.tInc = Math.max(this.tInc * (previousZoom / this.#zoom), default_T_Inc * .1);
+
+        this.#zoom = Math.max(Math.min(goalZoom, Camera.#maxZoom), Camera.#minZoom);
+
+        // calculate tInc
+        let tInc;
+        if (this.#zoom <= 1) {
+            tInc = default_T_Inc;
+        } else if (1 < this.#zoom && this.#zoom <= Camera.#tIncLevel) {
+            let slope = (default_T_Inc - Camera.#minTinc) / (1 - Camera.#tIncLevel);
+            tInc = (slope * this.#zoom) - (slope * Camera.#tIncLevel) + Camera.#minTinc;
+        } else {
+            console.log("Zoom too BIG for TINC");
+            tInc = Camera.#minTinc;
+        }
+
+        this.tInc = tInc;
+
+
+        // calculate tickRate
+        let tickRate;
+        if (this.#zoom <= Camera.#tickRateLevelStart) {
+            tickRate = defaultTick;
+        } else if (Camera.#tickRateLevelStart < this.#zoom && this.#zoom <= Camera.#tickRateLevelEnd) {
+            let slope = (defaultTick - Camera.#maxTickRate) / (Camera.#tickRateLevelStart - Camera.#tickRateLevelEnd);
+            tickRate = slope * this.#zoom - slope * Camera.#tickRateLevelStart + defaultTick;
+        } else {
+            console.log("Zoom too BIG for TickRate");
+
+            tickRate = Camera.#maxTickRate;
+        }
+
+        this.#tickRate = tickRate;
+
+        console.log("Zoom: " + this.#zoom + " | TINC: " + tInc + " | tickRate: " + tickRate);
+
 
         displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, this.#tickRate);
     }
@@ -765,15 +799,24 @@ class Camera {
             this.#focusedOn = focusedOn;
             // calculate new zoom
             let dim = displayScreen.vectors[focusedOn].radius * 2;
-            console.log("dim: " + dim);
-            let spacing = width * .2;
-            this.#zoom = (width - 2 * spacing) / dim;
-            this.updateZoom(previousZoom);
+            let spacing = width * .35;
+
+            let goal = (width - 2 * spacing) / dim;
+            this.updateZoom(goal);
+
+            // while (this.#zoom <= goal && this.#zoom <= 50) {
+            //     this.zoomIn();
+            // }
+
+            // this.#zoom = Math.min((width - 2 * spacing) / dim, 50);
+            // this.updateZoom(previousZoom);
 
         } else {
             this.#focusedOn = 0;
-            this.#zoom = 1;
-            this.tInc = default_T_Inc;
+            this.updateZoom(1);
+            // this.#zoom = 1;
+            // this.tInc = default_T_Inc;
+            // this.tickRate = defaultTick;
         }
     }
     isFollowing() {return this.#isFollowing;}
@@ -810,13 +853,34 @@ class DisplayScreen {
         this.scaledInputs = [];
         this.running = false;
         
-        document.getElementById("draw_control_div").style.display="none";
-        document.getElementById("draw_options_div").style.display="none";
+        document.getElementById("draw-control-div").style.display="none";
     
-        document.getElementById("control-main").style.display = "absolute";
-        document.getElementById("display_slider_div").style.display ="flex";
-        document.getElementById("display_toggle_div").style.display = "flex";
-        document.getElementById("display_control_div").style.display="flex";
+        document.getElementById("display-control-div").style.display="flex";
+        document.getElementById("display-options-div").style.display="flex";
+        let main = document.getElementById("control-main");
+        main.style.display="absolute";
+        let root = document.documentElement;
+        root.style.setProperty('--opacity', defaultOpacity);
+
+        main.classList.add("opacity-class");
+        main.classList.toggle("opacity-anim");
+
+        // if (element.classList.contains('minimize-class')) {
+        //     element.classList.remove('minimize-class');
+        //     container.classList.remove("slide-away-class");
+        //     element.classList.add("un-minimize-class");
+        //     container.classList.add("slide-back-class");
+        // } else {
+        //     element.classList.add('minimize-class');
+        //     container.classList.add("slide-away-class");
+        //     element.classList.remove("un-minimize-class");
+        //     container.classList.remove("slide-back-class");
+        // }
+        // document.getElementById("control-main").style.font="2px";
+
+        // document.getElementById("epi-controls-container").style.color="red";
+        // document.getElementById("control-main").style.opacity=".1";
+        // document.getElementById("control-main").setAttribute("style","opacity:0.1; -moz-opacity:0.5; filter:alpha(opacity=50)");
 
         scaleCanvas();
     
@@ -838,7 +902,7 @@ class DisplayScreen {
     
         this.transformation = new Transformation(this.scaledInputs);
         // adjustNSlider.max = Math.min(this.transformation.vectors.length, maxNumberOfVectors);
-        this.numVectInUse = Math.min(this.transformation.vectors.length, defaultNumOfVectors);
+        this.numVectInUse = Math.min(this.transformation.size(), defaultNumOfVectors);
         // adjustNSlider.value = this.numVectInUse;
         this.vectors = this.transformation.getVectors(this.numVectInUse);
 
@@ -908,7 +972,7 @@ class DisplayScreen {
             ctx.stroke();
     
             // draw each circle
-            for (let i = 1; i < displayScreen.numVectInUse; i++) {
+            for (let i = 1; i < circleCenters.length; i++) {
                 if (i == camera.getFocusedOn()) {
                     ctx.lineWidth = circleFocusedLineWidth;
                     ctx.strokeStyle = "rgb(" + circle_focus_color + ")";
@@ -932,13 +996,13 @@ class DisplayScreen {
         ctx.beginPath();
         ctx.moveTo(displayScreen.coordsToDrawX(0), displayScreen.coordsToDrawY(0));
     
-        for (let i = 0; i < displayScreen.numVectInUse; i++) {
+        for (let i = 0; i < circleCenters.length; i++) {
             ctx.lineTo(displayScreen.coordsToDrawX(circleCenters[i][0]), displayScreen.coordsToDrawY(circleCenters[i][1]));
         }
         ctx.stroke();
     
         // add final value of fourier transform at currT
-        displayScreen.approximation.push([circleCenters[displayScreen.numVectInUse - 1][0], circleCenters[displayScreen.numVectInUse-1][1], displayScreen.currT]);
+        displayScreen.approximation.push([circleCenters[circleCenters.length - 1][0], circleCenters[circleCenters.length-1][1], displayScreen.currT]);
         // let timeShown = displayScreen.approximation[displayScreen.numVectInUse - 1][2] - displayScreen.approximation[0][2];
         let timeShown = displayScreen.approximation[displayScreen.approximation.length - 1][2] - displayScreen.approximation[0][2];
 
@@ -971,9 +1035,40 @@ class DisplayScreen {
     }
     
     drawNumVectors() {
-        ctx.font = "48px serif";
-        ctx.lineWidth = canvasTextWidth;
-        ctx.strokeText(this.numVectInUse, (width * .8), (height * .95));
+
+        ctx.fillStyle = "rgb(" + nice_blue + ")";
+        ctx.font = (width * .07) + "px Georgia";
+        ctx.save();
+        let t1 = this.numVectInUse.toString();
+        let m1 = ctx.measureText(t1);
+        let h1 = m1.actualBoundingBoxAscent + m1.actualBoundingBoxDescent;
+        let w1 = m1.width;
+
+        ctx.fillStyle = "rgb(" + red + ")";
+        ctx.font = (width * .035) + "px Monospace";
+        ctx.save();
+        let t2 = " OF ";
+        let m2 = ctx.measureText(t2);
+        let h2 = m2.actualBoundingBoxAscent + m2.actualBoundingBoxDescent;
+        let w2 = m2.width;
+
+        ctx.fillStyle = "rgb(" + nice_blue + ")";
+        ctx.font = (width * .07) + "px Georgia";
+        let t3 = Math.min(this.transformation.size(), maxNumberOfVectors).toString();
+        let m3 = ctx.measureText(t3);
+        let h3 = m3.actualBoundingBoxAscent + m3.actualBoundingBoxDescent;
+        let w3 = m3.width;
+
+
+        let paddW = (width * .97);
+        let paddH = (height * .02);
+
+        ctx.fillText(t3, paddW - w3, paddH + h3);
+        ctx.restore();
+        ctx.fillText(t2, paddW - w3 - w2, paddH + h3);
+        ctx.restore();
+        ctx.fillText(t1, paddW - w3 - w2 - w1, paddH + h3);
+
     }
     
     drawGoal() {
@@ -982,19 +1077,20 @@ class DisplayScreen {
         }
     
         ctx.fillStyle = "rgb(" + goal_dots_color + " / 50%)";
-        let r = Math.min(width * .025 * camera.getZoom(), width * .07 );
+        // let r = Math.min(width * .025 * camera.getZoom(), width * .07 );
+        let r = Math.max(2, Math.min(width * .07, width * .003 * camera.getZoom()));
     
         for (let i = 0; i < this.scaledInputs.length; i++) {
             ctx.beginPath();
     
             let x = this.coordsToDrawX(this.scaledInputs[i][0]);
             let y = this.coordsToDrawY(this.scaledInputs[i][1]);
-            ctx.arc(x, y, camera.getZoom(), 0, 2*Math.PI, false);
+            ctx.arc(x, y, r, 0, 2*Math.PI, false);
             ctx.fill();
         }
     }
     
-    getCoords(currT) {
+    getCoords() {
         let coords = [];
         let x = this.vectors[0].radius * Math.cos(this.currT * this.vectors[0].scaledIndex + this.vectors[0].offset);
         let y = this.vectors[0].radius * Math.sin(this.currT * this.vectors[0].scaledIndex + this.vectors[0].offset);
@@ -1011,7 +1107,7 @@ class DisplayScreen {
     }
 
     setNumVectorsInUse(num) {
-        this.numVectInUse = Math.min(Math.max(2, num), maxNumberOfVectors);
+        this.numVectInUse = Math.min(Math.max(2, num), Math.min(maxNumberOfVectors, this.transformation.size()));
         this.vectors = this.transformation.getVectors(this.numVectInUse);
 
         if (this.numVectInUse <= camera.getFocusedOn()) {
@@ -1022,7 +1118,7 @@ class DisplayScreen {
     getVectorEndpoints(time) {
         let endpoints = [];
         let x, y;
-        for (let i = 0; i < this.numVectInUse; i++) {
+        for (let i = 0; i < this.vectors.length; i++) {
             if (i == 0) {
                 x = this.vectors[0].radius * Math.cos(time * this.vectors[0].scaledIndex + this.vectors[0].offset);
                 y = this.vectors[0].radius * Math.sin(time * this.vectors[0].scaledIndex + this.vectors[0].offset);
@@ -1071,62 +1167,77 @@ class DisplayScreen {
         }
         return scaled;
     }
-
-    // updateNumVectors(num) {
-    //     this.numVectInUse = num;
-    //     this.vectors = this.transformation.getVectors(num);
-    // }
-
 }
 
-class ClickAndHold {
+class LongPressClickable {
 
-    constructor(target, callback, isSteady) {
-        this.target = target;
+    static SHORTEST_TIMEOUT = 50;
+
+    constructor(clickable, callback, fireRateFx) {
+        this.target = clickable;
         this.callback = callback;
         this.isHeld = false;
         this.activeHoldTimeoutId = null;
-        this.isSteady = isSteady;
+        this.fireRateFx = fireRateFx;
+        this.defaultFireRate = 1000;
+        this.currentFireRate = this.defaultFireRate;
+        this.change = 1;
+
 
         ["mousedown", "touchstart"].forEach(type => {
-            this.target.addEventListener(type, this._onHoldStart.bind(this));
+            this.target.addEventListener(type, this.onTouch.bind(this));
         });
 
         ["mouseup", "mouseleave", "mouseout", "touchend", "touchcancel"].forEach(type => {
-            this.target.addEventListener(type, this._onHoldEnd.bind(this));
+            this.target.addEventListener(type, this.onRelease.bind(this));
         });
     }
 
-    _onHoldStart() {
+    onTouch() {
         this.isHeld = true;
-        if (this.isSteady) {
-            this.activeHoldTimeoutId = this.fireSteady();
-        }
+            this.callback(this.change);
+            this.activeHoldTimeoutId = this.fireCallback();
+        
     }
 
-    fireSteady() {
+    fireCallback() {
         let x = setTimeout(() => {
             if (this.isHeld) {
-                this.callback();
-                return this.fireSteady();
+                this.callback(this.change);
+                this.currentFireRate = this.fireRateFx(this.currentFireRate);
+
+                if (this.currentFireRate == LongPressClickable.SHORTEST_TIMEOUT) {
+                    this.change = Math.min(this.change + 1, 10);
+                }
+                return this.fireCallback();
             } else {
                 return;
             }
-        }, 1000);
+        }, this.currentFireRate);
     }
 
-    _onHoldEnd() {
+    onRelease() {
         this.isHeld = false;
+        this.currentFireRate = this.defaultFireRate;
+        this.change = 1;
         clearTimeout(this.activeHoldTimeoutId);
+    }
+
+    static identity(x) {
+        return x;
+    }
+
+    static linear(x) {
+        return Math.max(x * .7, LongPressClickable.SHORTEST_TIMEOUT);
     }
 }
 
-const canvas = document.getElementById("canvas_interactive");
+const epicycleCanvas = document.getElementById("canvas-interactive");
 const defaultNumOfVectors = 5;
-const defaultTick = 40;
-const ctx = canvas.getContext("2d");
+const defaultTick = 20;
+const ctx = epicycleCanvas.getContext("2d");
 const drawLineWidth = 2;
-const default_T_Inc  = .03;
+const default_T_Inc  = .01;
 const maxNumberOfVectors = 300;
 
 // const dirty_creme = "#F5F4E4";
@@ -1138,18 +1249,7 @@ const maxNumberOfVectors = 300;
 // const darker_green = "#426A5A";
 // const nice_blue = "#3F7CAC";
 
-const dirty_creme = "245 244 228";
-const red = "250 112 112";
-const creme = "254 253 237";
-const blackish = "54 53 55";
-const offBlackish = "71 91 90";
-const light_green = "198 235 197";
-const dark_green = "161 195 152";
-const darker_green = "68 106 90";
-const nice_blue = "63 124 172";
-const artificial_blue = "64 107 173";
 
-const whiter_white = "246 253 250";
 
 const circleBehindFocusLineWidth = 1;
 const circleUnfocusedLineWidth = 1;
@@ -1174,9 +1274,10 @@ let sampleBgColor = nice_blue;
 let sampleCanvasColor = dirty_creme;
 let arrowColor = offBlackish;
 
+let root = document.documentElement;
+let defaultOpacity = (getComputedStyle(root).getPropertyValue("--opacity"));
 
-
-
+let minX, minY;
 
 
 /*
@@ -1198,7 +1299,7 @@ function main() {
     // initialize global variables
 
 
-    var positionInfo = canvas.getBoundingClientRect();
+    var positionInfo = epicycleCanvas.getBoundingClientRect();
     height = positionInfo.height;
     width = positionInfo.width;
     breathing_room = width * .3;
@@ -1225,7 +1326,7 @@ var camera = new Camera(defaultTick);
 var displayScreen = new DisplayScreen();
 
 document.getElementById("clean-up-toggle").addEventListener("change", cleanUpToggleListener);
-document.getElementById("epi_controls_container").addEventListener("animationend", controlAnimListener);
+document.getElementById("epi-controls-container").addEventListener("animationend", controlAnimListener);
 
 // adjustNSlider = document.getElementById("range_adjust_n");
 // adjustNSlider.addEventListener("input", adjustNSliderListener);
@@ -1234,33 +1335,30 @@ document.getElementById("epi_controls_container").addEventListener("animationend
 window.addEventListener('resize', scaleCanvas);
 window.addEventListener("load", loadListener);
 
-document.getElementById("btn_back").addEventListener("click", backButtonListener);
-document.getElementById("show_goal_toggle").addEventListener('change', showGoalToggleListener);
-document.getElementById("just_approx_toggle").addEventListener('change', approxOnlyToggleListener);
-document.getElementById("circle_visibility_toggle").addEventListener('change', function(){displayScreen.circleShownToggle = this.checked});
+document.getElementById("btn-back").addEventListener("click", backButtonListener);
+document.getElementById("show-goal-toggle").addEventListener('change', showGoalToggleListener);
+document.getElementById("just-approx-toggle").addEventListener('change', approxOnlyToggleListener);
+document.getElementById("circle-visibility-toggle").addEventListener('change', function(){displayScreen.circleShownToggle = this.checked});
 
 document.getElementById("follow-toggle").addEventListener('change', followToggleListener);
 
 document.getElementById("min-btn").addEventListener("click", anim);
 
+// const identity = function (x) { return x; };
+// const linear = function (x) { return Math.max(x * .7, ClickAndHold.SHORTEST_TIMEOUT); };
 
-new ClickAndHold(document.getElementById("zoom-in"), () => {camera.zoomIn()}, true);
-new ClickAndHold(document.getElementById("zoom-out"), () => {camera.zoomOut()}, true);
-new ClickAndHold(document.getElementById("add-vector"), addVectorListener, true);
-new ClickAndHold(document.getElementById("remove-vector"), removeVectorListener, true);
+new LongPressClickable(document.getElementById("zoom-in"), () => {camera.zoomIn()}, LongPressClickable.linear);
+new LongPressClickable(document.getElementById("zoom-out"), () => {camera.zoomOut()}, LongPressClickable.linear);
+new LongPressClickable(document.getElementById("add-vector"), addVectorListener, LongPressClickable.linear);
+new LongPressClickable(document.getElementById("remove-vector"), removeVectorListener, LongPressClickable.linear);
 
-function pressListener(fx) {
-    start = new Date();
 
-    fx();
+function addVectorListener(change) {
+    updateNumVectors(displayScreen.numVectInUse + change);
 }
 
-function addVectorListener() {
-    updateNumVectors(displayScreen.numVectInUse + 1);
-}
-
-function removeVectorListener() {
-    updateNumVectors(displayScreen.numVectInUse - 1);
+function removeVectorListener(change) {
+    updateNumVectors(displayScreen.numVectInUse - change);
 }
 
 function updateNumVectors(num) {
@@ -1270,11 +1368,11 @@ function updateNumVectors(num) {
         displayScreen.drawApproximation();
     } else {
 
-        stopAnimationWrapper(displayScreen.timerId);
+        // stopAnimationWrapper(displayScreen.timerId);
 
         displayScreen.setNumVectorsInUse(num);
 
-        displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
+        // displayScreen.timerId = startAnimationWrapper(displayScreen.drawEpicycles, camera.getTickRate());
     }
 }
 
@@ -1292,46 +1390,60 @@ function cleanUpToggleListener() {
 function controlAnimListener() {
     let container = document.getElementById("control-main");
     console.log("animation End");
-    
-    if (container.classList.contains("slide-away-class")) {
-        document.getElementById("min-btn").value = "show";
-    } else {
-        document.getElementById("min-btn").value = "hide";
-    }
+    let value = container.classList.contains("slide-away-class") ? "show" : "hide";
+    document.getElementById("min-btn").value = value;
+    container.classList.toggle("opacity-anim");
+    scaleCanvas();
 }
 
 function anim() {
     console.log("Clicked");
     let tx, ty;
     let container = document.getElementById("control-main");
-    let element = document.getElementById("epi_controls_container");
+    minX = container.style.left;
+    minY = container.style.top;
+    console.log("anim x,y: " + minX + ", " + minY);
 
-    style = window.getComputedStyle(document.getElementById("min-btn"));
+
+    container.classList.toggle("opacity-anim");
+    let controls = document.getElementById("epi-controls-container");
+    let btn = document.getElementById("min-btn");
+    style = window.getComputedStyle(btn);
+
     let btnW = parseFloat(style.width);
     let btnH = parseFloat(style.height);
-    let btnTop = parseFloat(container.style.top);
-    let btnLeft = parseFloat(container.style.left);
-    // console.log("btn w/h: " + style.width + "/" + style.height + " x,y: ");
+    let containerTop = parseFloat(container.style.top);
+    let containerLeft = parseFloat(container.style.left);
+    // let containerTop = 90 * btnH;
+    // let containerLeft = 5 * btnW;
 
-    tx = width - btnW - btnLeft;
-    ty = height - btnH - btnTop;
+    console.log("Anim, BTN width/height: " + btnW + ", " + btnH + " container x, y: " + containerLeft + ", " + containerTop);
 
-    let root = document.documentElement;
+    tx = width - btnW - containerLeft - parseFloat(style.getPropertyValue('border-right-width'));
+    ty = height - btnH - containerTop;
+
+    // convert to percentages
+    // style = window.getComputedStyle(container);
+    // let pX = (tx / parseFloat(style.width)) * 100;
+    // let pY = (ty / parseFloat(style.height)) * 100;
+    // console.log("tx,y: " + tx + ", " + ty + " | as percentage x, y: " + pX + ", " + pY);
+
+    // let root = document.documentElement;
+    // root.style.setProperty('--translateX', pX + "%");
+    // root.style.setProperty('--translateY', pY + "%");
+
     root.style.setProperty('--translateX', tx + "px");
     root.style.setProperty('--translateY', ty + "px");
 
-    // element.classList.toggle("minimize-class");
-    // container.classList.toggle("slide-away-class");
-
-    if (element.classList.contains('minimize-class')) {
-        element.classList.remove('minimize-class');
+    if (controls.classList.contains('minimize-class')) {
+        controls.classList.remove('minimize-class');
         container.classList.remove("slide-away-class");
-        element.classList.add("un-minimize-class");
+        controls.classList.add("un-minimize-class");
         container.classList.add("slide-back-class");
     } else {
-        element.classList.add('minimize-class');
+        controls.classList.add('minimize-class');
         container.classList.add("slide-away-class");
-        element.classList.remove("un-minimize-class");
+        controls.classList.remove("un-minimize-class");
         container.classList.remove("slide-back-class");
     }
 
@@ -1340,8 +1452,8 @@ function anim() {
 
 function loadListener() {
     // scaleCanvas();
-    drawScreen.initDrawMode();
 
+    drawScreen.initDrawMode();
 }
 
 function backButtonListener() {
@@ -1368,12 +1480,13 @@ function approxOnlyToggleListener() {
         stopAnimationWrapper(displayScreen.timerId);
         camera.save();
         camera.reset();
-
+        document.getElementById("follow-toggle").disabled=true;
         displayScreen.drawApproximation();
     } else {
         stopAnimationWrapper(displayScreen.timerId);
 
         camera.load();
+        document.getElementById("follow-toggle").disabled=false;
 
         displayScreen.setNumVectorsInUse(displayScreen.numVectInUse);
 
@@ -1401,45 +1514,67 @@ function stopAnimationWrapper(t) {
 
 
 function scaleCanvas() {
-    let epi_container = document.getElementById("epi_container");
-    let vp_width  = window.innerWidth || document.documentElement.clientWidth || 
-    document.body.clientWidth;
     let vp_height = window.innerHeight|| document.documentElement.clientHeight|| 
     document.body.clientHeight;
+    let mainWidth = parseFloat(window.getComputedStyle(document.getElementById("main")).width);
     
+    // console.log("VPheight, mainWidth: " + vp_height + ", " + mainWidth);
+        if (!(document.getElementById("aside").style.display == "none")) {
+        let aside_w = document.getElementById("aside").offsetWidth;
+        // console.log("\tAside visible: " + aside_w);
 
-    // console.log("Viewport w,h: " + vp_width + ", " + vp_height + " controlHeight: " + control_height);
-    let spacing = 10;
-    if (vp_height < window.innerWidth) {
-        w = h = Math.max(vp_height - spacing, 300);
+        mainWidth -= aside_w;
+        // console.log("\tVPheight, mainWidth: " + vp_height + ", " + mainWidth);
+
+    }
+    let spacing = 50;
+    let w, h;
+    if (vp_height < mainWidth) {
+        w = h = vp_height - spacing;
 
     } else {
-        w = h = Math.max(vp_width - spacing, 300);
+        w = h = mainWidth - spacing;
     }
 
-    if (!(document.getElementById("aside").style.display == "none")) {
-        let aside_w = document.getElementById("aside").offsetWidth;
-        console.log("Aside visible: " + aside_w);
-
-        w = h = (w - aside_w);
-    }
-
+    let epi_container = document.getElementById("epi-container");
     epi_container.style.width = w + "px";
     epi_container.style.height = h + "px";
 
-    canvas.width = canvas.height = height = width = w;
+    epicycleCanvas.width = epicycleCanvas.height = height = width = w;
     breathing_room = width * .2;
 
     if (!drawScreen.sampleScreen) {
-        let controls_container = document.getElementById("control-main");
+        let controlsContainer = document.getElementById("control-main");
+        // console.log("scaleCanvas - adjusting control-main");
+        let style = window.getComputedStyle(controlsContainer);
+        let controlHeight = parseFloat(style.height);
+        let newX = width * .02;
+        let newY = height - newX - controlHeight;
 
-        let style = window.getComputedStyle(controls_container);
-        let control_height = parseFloat(style.height);
-        let btnPadding = height * .02;
-        let btnY = height - btnPadding - control_height;
-        controls_container.style = "position:absolute; left: " + btnPadding + "px; top:" + btnY + "px;";
+        console.log("\n\nleft/top: " + newX + "/" + newY);
+        if ((document.getElementById("min-btn").value === "show")) {
+        
+            let btn = document.getElementById("min-btn");
+            style = window.getComputedStyle(btn);
+        
+            let transX = parseFloat(getComputedStyle(root).getPropertyValue("--translateX"));
+            let transY = parseFloat(getComputedStyle(root).getPropertyValue("--translateY"));
+
+            let realButtonX = parseFloat(newX) + transX;
+            let realButtonY = parseFloat(newY) + transY;
+
+            let btnW = parseFloat(style.width);
+            let btnH = parseFloat(style.height);
+            let goalX = width - btnW;
+            let goalY = width - btnH;
+
+            newX = newX + (goalX - realButtonX);
+            newY = newY + (goalY - realButtonY);
+        }
+
+        controlsContainer.style.left = newX + "px";
+        controlsContainer.style.top = newY + "px";
     }
-
 
     if (drawScreen.getDrawMode()) { // redraw users rendition
         drawScreen.display();

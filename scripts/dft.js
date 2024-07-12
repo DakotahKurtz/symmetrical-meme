@@ -99,6 +99,10 @@ class Transformation {
         return this.vectors.slice(0, n);
     }
 
+    size() {
+        return this.vectors.length;
+    }
+
 
 }
 

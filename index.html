@@ -24,7 +24,7 @@
         <h1>SiteName/Logo</h1>
         <img src="/Users/dakotahkurtz/Downloads/pumpkin.png" alt="Logo is a Pumpkin" width="150" height="150">
     </div>
-    <div class ="page">
+    <div class ="page" id="main" >
         <div class="side" id = "aside">
             <p class = "toc-text">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent ultricies, erat et interdum sagittis, enim risus sodales magna, id blandit lorem tortor eu augue. Etiam a auctor tellus. Pellentesque ac nunc vitae neque dictum malesuada faucibus sed erat. Cras luctus finibus purus vel accumsan. Nunc tincidunt interdum laoreet. Donec suscipit, nunc et vehicula tempor, felis sapien consequat sem, et pharetra ante sem at orci. Maecenas sit amet urna rutrum, vestibulum erat sed, hendrerit neque. Ut eu ex facilisis elit lobortis sagittis. Curabitur in neque ut magna tempus fringilla. Maecenas at urna id turpis aliquam ornare eget eget dolor. Cras malesuada pretium nisi, a tincidunt purus blandit sodales. Aliquam erat volutpat. Vivamus et egestas nunc, nec pulvinar diam.
@@ -37,6 +37,12 @@
             </p>
         </div>
         <main>
+            <!-- <div class="display-container" id="graph-container">
+                <canvas id = "graph-display">
+                    A graph display the approximation of a sawtooth function by a trigonometric sum
+                </canvas>
+
+            </div> -->
             <p class="article-p">
                 Phasellus vitae massa dolor. Morbi sit amet ex ut ante faucibus dictum vel nec enim. Phasellus volutpat risus in justo faucibus rhoncus. In sit amet consectetur lectus, nec maximus quam. Mauris eleifend, risus id varius rutrum, felis nibh vehicula nunc, vitae viverra augue massa non orci. Cras sit amet diam laoreet ex interdum tempus ac at nibh. Vivamus mi quam, aliquet quis sagittis porta, tempor faucibus urna.
 
@@ -56,87 +62,88 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
 
     Suspendisse leo tortor, feugiat ut ligula non, congue lobortis tortor. Morbi pellentesque erat metus, sed condimentum nisi consequat vel. Aliquam efficitur, mauris ornare fringilla dapibus, augue est fermentum eros, malesuada feugiat mauris dolor ut metus. Duis ac dui in magna viverra gravida. Maecenas convallis facilisis nulla, a imperdiet nisl dignissim non. Etiam viverra at lorem sed gravida. Nam semper condimentum maximus. Suspendisse suscipit posuere volutpat.
             </p>
-            <div class="display-container" id = "epi_container">
-                    <canvas id="canvas_interactive">
+            
+            <div class="display-container" id = "epi-container">
+                    <canvas id="canvas-interactive">
                         A graphic displaying rotating epicycles that generate an image.
                     </canvas>
                     <div class="controls-container-container" id="control-main">
-                        <input type="button" class="minimize-button " value="Hide" id="min-btn">
+                        <input type="button" class="minimize-button" value="Hide" id="min-btn">
 
-                        <div class="controls-container" id = "epi_controls_container">
-                            <!-- <div class="control-column" id = "draw-min-col">
-                                <div class="control" id="draw-min-div">
-                                    <input type="button" class="canvas_btn" value="hide">
+                        <div class="controls-container" id = "epi-controls-container">
+                                <div class="control-row" id = "draw-control-div">
+                                    <div class="control">
+                                        <input type="button" class="canvas-btn" value="Finished" id="btn-finished">
+                                    </div>
+                                    <div class="control" id="erase-div">
+                                        <input type ="button" class="canvas-btn" value = "Erase" id="btn-erase">
+                                    </div>
+
+                                    <div class="control">
+                                        <input type="button" class="canvas-btn" value="Sample Drawings" id="btn-samples">
+                                    </div>
+                                    <div class="control" >
+                                        <label class="switch">
+                                            <input type="checkbox" class="canvas-checkbox" id="clean-up-toggle" checked>
+                                            <label for="clean-up-toggle" class="toggle-label">clean-up</label>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div> -->
-                            <div class="control-column" id = "draw_control_div">
-                                <div class="control">
-                                    <input type="button" class="canvas_btn" value="Finished" id="btn_finished">
+                                <div class ="control-row" id="display-control-div">
+
+                                    <div class="control">
+                                        <input type="button" class="canvas-btn" value="Back" id="btn-back">
+                                    </div>
+
+                                    <div class="control paired-control">
+                                        <input type="button" class="canvas-btn paired-btn" value="-" id="zoom-out">
+                                        <label class="paired-btn-label">Zoom</label>
+                                        <input type="button" class="canvas-btn paired-btn" value="+" id="zoom-in">
+                                    </div>
+
+                                    <div class="control paired-control">
+                                        <input type="button" class="canvas-btn paired-btn" value="-" id="remove-vector">
+                                        <label class="paired-btn-label">Vectors</label>
+                                        <input type="button" class="canvas-btn paired-btn" value="+" id="add-vector">
+                                    </div>
                                 </div>
-                                <div class="control" id="erase_div">
-                                    <input type ="button" class="canvas_btn" value = "Erase" id="btn_erase">
-                                </div>
-                            </div>
-                            <div class="control-column" id="draw_options_div">
-                                <div class="control">
-                                    <input type="button" class="canvas_btn" value="Sample Drawings" id="btn_samples">
-                                </div>
-                                <div class="control">
-                                    <label class="switch">
-                                        <div class = "switch_label">Clean Up</div>       
-                                        <input type="checkbox" class="canvas_checkbox" id="clean-up-toggle"  for="clean-up" checked>
-                                        <div class="slidebox"></div>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class ="control-column" id="display_control_div">
-                                <div class="control">
-                                    <input type="button" class="canvas_btn" value="Back" id="btn_back">
-                                </div>
-                                <div class="control">
-                                    <label class="switch">
-                                        <div class = "switch_label">Follow</div>       
-                                        <input type ="checkbox" class="canvas_checkbox" id="follow-toggle">
-                                    <div class="slidebox"></div>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="control-column" id="display_slider_div">
-                                <div class="control" id="focus_div">
-                                    <input type="button" class="canvas_btn" value="-" id="zoom-out">
-                                    <label class="paired-btn-label">Zoom</label>
-                                    <input type="button" class="canvas_btn" value="+" id="zoom-in">
+                                <div class="control-row" id="display-options-div">
+                                    <div class="control">
+                                        <label class="switch">
+                                            <input type ="checkbox" class="canvas-checkbox" id="follow-toggle">
+                                            <label for="follow-toggle" class="toggle-label">
+                                                follow 
+                                            </label>
+                                        </label>
+                                    </div>
+
+                                    <div class="control" id="circle-toggle-div">
+                                        <label class="switch">
+                                            <input type = "checkbox" class="canvas-checkbox" id="circle-visibility-toggle" checked>
+                                            <label for="circle-visibility-toggle" class="toggle-label">
+                                                circles
+                                            </label>
+                                        </label>
+                                    </div>
+
+                                    <div class="control" id="approx-toggle-div">
+                                        <label class="switch">
+                                            <input type ="checkbox" class="canvas-checkbox" id="just-approx-toggle">
+                                            <label for="just-approx-toggle" class="toggle-label">
+                                                stop
+                                            </label>
+                                        </label>
+                                    </div>
+
+                                    <div class="control" id="goal-toggle-div">
+                                        <label class="switch">
+                                            <input type="checkbox" class="canvas-checkbox" id="show-goal-toggle" checked>
+                                            <label for="show-goal-toggle" class="toggle-label">goal</label>
+                                        </label>
+                                    </div>
                                 </div>
 
-                                <div class="control">
-                                    <input type="button" class="canvas_btn" value="-" id="remove-vector">
-                                    <label class="paired-btn-label">Vector Count</label>
-                                    <input type="button" class="canvas_btn" value="+" id="add-vector">
-                                </div>
-                            </div>
-                            <div class="control-column" id="display_toggle_div">
-                                <div class = "control" id="circle_toggle_div">
-                                    <label class="switch">
-                                    <div class = "switch_label">Circles</div>       
-                                    <input type = "checkbox" class="canvas_checkbox" id="circle_visibility_toggle" checked>
-                                    <div class="slidebox"></div>
-                                </label>
-                                </div>
-                                <div class="control" id="approx_toggle_div">
-                                    <label class="switch">
-                                        <div class = "switch_label">Stop</div>       
-                                        <input type ="checkbox" class="canvas_checkbox" id="just_approx_toggle">
-                                    <div class="slidebox"></div>
-                                    </label>
-                                </div>
-                                <div class="control" id="goal_toggle_div">
-                                    <label class="switch">
-                                        <div class = "switch_label">Goal</div>       
-                                        <input type="checkbox" class="canvas_checkbox" id="show_goal_toggle" checked>
-                                        <div class="slidebox"></div>
-                                    </label>
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
             </div>
@@ -154,8 +161,10 @@ Etiam faucibus congue odio vitae vulputate. Mauris vel dolor dictum, lobortis ma
 </div>
     <script src = "scripts/dft.js" ></script>
     <script src ="scripts/samples.js"></script>
-
+    <script src = "scripts/colors.js"></script>
     <script src = "scripts/epicycledisplay.js"></script>
+
+    <!-- <script src = "scripts/graphdisplay.js"></script> -->
 
 </body>
 </html>
