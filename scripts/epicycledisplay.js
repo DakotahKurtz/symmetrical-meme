@@ -1144,7 +1144,78 @@ class DisplayScreen {
     }
 }
 
-class LongPressClickable {
+function linearFireRate(shortest_timeout) {
+        this.shortest_timeout = shortest_timeout;
+        let fx = (x) => {
+            return Math.max(x * .7, this.shortest_timeout);
+        };
+        return { shortest_timeout, fx };
+    
+}
+
+function longPressClickable(clickable, callback, fireRateFx) {
+        this.SHORTEST_TIMEOUT = fireRateFx.shortest_timeout;
+        this.target = clickable;
+        this.callback = callback;
+        this.isHeld = false;
+        this.activeHoldTimeoutId = null;
+        this.fireRateFx = fireRateFx.fx;
+        this.defaultFireRate = 1000;
+        this.currentFireRate = this.defaultFireRate;
+        this.change = 1;
+
+
+
+        const onTouch = () => {
+            this.isHeld = true;
+            this.callback(this.change);
+            this.activeHoldTimeoutId = fireCallback();
+        };
+
+        const fireCallback = () => {
+            let x = setTimeout(() => {
+                if (this.isHeld) {
+                    this.callback(this.change);
+                    this.currentFireRate = this.fireRateFx(this.currentFireRate);
+
+                    if (this.currentFireRate == LongPressHandler.SHORTEST_TIMEOUT) {
+                        this.change = Math.min(this.change + 1, 10);
+                    }
+                    return fireCallback();
+                } else {
+                    return;
+                }
+            }, this.currentFireRate);
+        };
+
+        onRelease = () => {
+            this.isHeld = false;
+            this.currentFireRate = this.defaultFireRate;
+            this.change = 1;
+            clearTimeout(this.activeHoldTimeoutId);
+        };
+
+        const identity = (x) => {
+            return x;
+        };
+
+        const linear = (x) => {
+            return Math.max(x * .7, this.SHORTEST_TIMEOUT);
+        };
+
+        ["mousedown", "touchstart"].forEach(type => {
+            this.target.addEventListener(type, onTouch.bind(this));
+        });
+
+        ["mouseup", "mouseleave", "mouseout", "touchend", "touchcancel"].forEach(type => {
+            this.target.addEventListener(type, onRelease.bind(this));
+        });
+
+        return { identity, linear };
+    
+}
+
+class LongPressHandler {
 
     static SHORTEST_TIMEOUT = 50;
 
@@ -1166,7 +1237,11 @@ class LongPressClickable {
         ["mouseup", "mouseleave", "mouseout", "touchend", "touchcancel"].forEach(type => {
             this.target.addEventListener(type, this.onRelease.bind(this));
         });
+
+        
     }
+
+
 
     onTouch() {
         this.isHeld = true;
@@ -1181,7 +1256,7 @@ class LongPressClickable {
                 this.callback(this.change);
                 this.currentFireRate = this.fireRateFx(this.currentFireRate);
 
-                if (this.currentFireRate == LongPressClickable.SHORTEST_TIMEOUT) {
+                if (this.currentFireRate == LongPressHandler.SHORTEST_TIMEOUT) {
                     this.change = Math.min(this.change + 1, 10);
                 }
                 return this.fireCallback();
@@ -1203,8 +1278,10 @@ class LongPressClickable {
     }
 
     static linear(x) {
-        return Math.max(x * .7, LongPressClickable.SHORTEST_TIMEOUT);
+        return Math.max(x * .7, LongPressHandler.SHORTEST_TIMEOUT);
     }
+
+    
 }
 
 const epicycleCanvas = document.getElementById("canvas-interactive");
@@ -1254,20 +1331,6 @@ let defaultOpacity = (getComputedStyle(root).getPropertyValue("--opacity"));
 
 let minX, minY;
 
-
-/*
-"rgb(70 70 70 / 20%)";
-    <!-- 
-        red: FA7070
-        creme: FEFDED
-        dirtycreme: F5F4E4
-        blackish: 363537
-
-        light green: C6EBC5
-        dark green: A1C398
-    -->
-*/
-
 let breathing_room;
 
 function main() {
@@ -1283,16 +1346,6 @@ function main() {
 
 var height;
 var width;
-
-// function inner(text) {
-//     console.log(text);
-// }
-
-// function outer(fx, text) {
-//     fx(text);
-// }
-
-// outer(inner, "Testing");
 
 main();
 
@@ -1322,11 +1375,10 @@ document.getElementById("min-btn").addEventListener("click", anim);
 // const identity = function (x) { return x; };
 // const linear = function (x) { return Math.max(x * .7, ClickAndHold.SHORTEST_TIMEOUT); };
 
-new LongPressClickable(document.getElementById("zoom-in"), () => {camera.zoomIn()}, LongPressClickable.linear);
-new LongPressClickable(document.getElementById("zoom-out"), () => {camera.zoomOut()}, LongPressClickable.linear);
-new LongPressClickable(document.getElementById("add-vector"), addVectorListener, LongPressClickable.linear);
-new LongPressClickable(document.getElementById("remove-vector"), removeVectorListener, LongPressClickable.linear);
-
+new LongPressHandler(document.getElementById("zoom-in"), () => {camera.zoomIn()}, LongPressHandler.linear);
+new LongPressHandler(document.getElementById("zoom-out"), () => {camera.zoomOut()}, LongPressHandler.linear);
+new LongPressHandler(document.getElementById("add-vector"), addVectorListener, LongPressHandler.linear);
+new LongPressHandler(document.getElementById("remove-vector"), removeVectorListener, LongPressHandler.linear);
 
 function addVectorListener(change) {
     updateNumVectors(displayScreen.numVectInUse + change);
