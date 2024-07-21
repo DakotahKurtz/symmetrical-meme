@@ -1,0 +1,11 @@
+export const dirty_creme = "245 244 228";
+export const red = "250 112 112";
+export const creme = "254 253 237";
+export const blackish = "54 53 55";
+export const offBlackish = "71 91 90";
+export const light_green = "198 235 197";
+export const dark_green = "161 195 152";
+export const darker_green = "68 106 90";
+export const nice_blue = "63 124 172";
+export const artificial_blue = "64 107 173";
+export const whiter_white = "246 253 250";
