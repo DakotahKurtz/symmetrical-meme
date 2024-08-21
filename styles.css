@@ -50,11 +50,32 @@ main {
     align-items: center;
     justify-items: center; 
     border: 3px dotted rgb(230, 142, 142);
-
-    
 }
 
+#graph-control-main {
+  /* width: 50%; */
+  font-size: 1em;
+}
 
+/* #graph-control-container{
+  background: rgb(71 91 90 / .6); 
+} */
+
+#graph-paired-div {
+  border: none;
+}
+
+#graph-N-label{
+  /* padding: 0px; */
+}
+
+#graph-row {
+  padding: none;
+  display: block;
+  border: none;
+  /* padding-left: 4px;
+  padding-right: 4px; */
+}
 
 .display-container {
   display: block;
@@ -137,7 +158,7 @@ main {
     background-color: inherit;
     cursor: pointer;
     /* padding: 4px; */
-    width: 100%;
+    /* width: 100%; */
 
     color: var(--white);
     display: inline-block;    

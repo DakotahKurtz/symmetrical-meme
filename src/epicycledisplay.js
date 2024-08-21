@@ -522,8 +522,11 @@ draw_mouseMove(e) {
 
     getInputs() {
         if (this.sampleChosen == -1 && !this.cleanUp) {
+            console.log("Here1");
             return this.mouseInputs;
         } else if (this.sampleChosen == -1) {
+            console.log("Here2");
+
             return this.clean(this.mouseInputs);
         }
         else {
@@ -855,30 +858,29 @@ class DisplayScreen {
         root.style.setProperty('--opacity', defaultOpacity);
         if (!(main.classList.contains("opacity-class"))) {
             main.classList.add("opacity-class");
-
         }
 
         if (!(main.classList.contains("opacity-anim"))) {
             main.classList.add("opacity-anim");
         }
 
-        scaleEpiCanvas();
     
         drawScreen.removeDrawMouseListeners();
         camera.reset();
 
         this.scaledInputs = this.canvasToCoords(drawScreen.getInputs());
+        console.log("display init(): " + this.scaledInputs.length);
 
-        var minX, minY, maxX, maxY;
-        minX = minY = Number.MAX_VALUE;
-        maxX = maxY = Number.MIN_VALUE;
+        // var minX, minY, maxX, maxY;
+        // minX = minY = Number.MAX_VALUE;
+        // maxX = maxY = Number.MIN_VALUE;
     
-        for (let i = 0; i < this.scaledInputs.length; i++) {
-            minX = Math.min(minX, this.scaledInputs[i][0]);
-            minY = Math.min(minY, this.scaledInputs[i][1]);
-            maxX = Math.max(maxX, this.scaledInputs[i][0]);
-            maxY = Math.max(maxY, this.scaledInputs[i][1]);
-        }
+        // for (let i = 0; i < this.scaledInputs.length; i++) {
+        //     minX = Math.min(minX, this.scaledInputs[i][0]);
+        //     minY = Math.min(minY, this.scaledInputs[i][1]);
+        //     maxX = Math.max(maxX, this.scaledInputs[i][0]);
+        //     maxY = Math.max(maxY, this.scaledInputs[i][1]);
+        // }
     
         this.transformation = new Transformation(this.scaledInputs);
         // adjustNSlider.max = Math.min(this.transformation.vectors.length, maxNumberOfVectors);
@@ -1276,7 +1278,7 @@ function main() {
     var positionInfo = canvas.getBoundingClientRect();
     height = positionInfo.height;
     width = positionInfo.width;
-    breathing_room = width * .3;
+    breathing_room = width * .1;
 }
 
 
@@ -1438,12 +1440,17 @@ function approxOnlyToggleListener() {
         camera.save();
         camera.reset();
         document.getElementById("follow-toggle").disabled=true;
+        document.getElementById("zoom-in").disabled = true;
+        document.getElementById("zoom-out").disabled = true;
+
         displayScreen.drawApproximation();
     } else {
         stopAnimationWrapper(displayScreen.timerId);
 
         camera.load();
         document.getElementById("follow-toggle").disabled=false;
+        document.getElementById("zoom-in").disabled = false;
+        document.getElementById("zoom-out").disabled = false;
 
         displayScreen.setNumVectorsInUse(displayScreen.numVectInUse);
 
@@ -1493,7 +1500,7 @@ export function scaleEpiCanvas() {
     epi_container.style.height = h + "px";
 
     canvas.width = canvas.height = height = width = w;
-    breathing_room = width * .2;
+    breathing_room = width * .1;
 
     if (!drawScreen.sampleScreen) {
         let controlsContainer = document.getElementById("control-main");

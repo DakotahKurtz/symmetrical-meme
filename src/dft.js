@@ -10,7 +10,7 @@ class Complex {
         return new Complex(c.r + this.r, c.i + this.i);
     }
 
-    mulitply(c) {
+    multiply(c) {
        var n_r = (this.r * c.r) - (this.i * c.i);
        var n_i = (this.r * c.i) + (this.i * c.r);
         return new Complex(n_r, n_i);
@@ -85,9 +85,9 @@ class Transformation {
             temp = new Complex(0, 0);
             scaledIndex = k - Math.floor(this.N / 2);
             for (let n = 0; n < this.N; n++) {
-                temp = temp.add(this.points[n].mulitply(Complex.euler(false, scaledIndex * ((2 * Math.PI) / this.N) * n)));
+                temp = temp.add(this.points[n].multiply(Complex.euler(false, scaledIndex * ((2 * Math.PI) / this.N) * n)));
             }
-            this.vectors.push(new Vector(scaledIndex, temp.mulitply(new Complex(1.0 / this.N, 0))));
+            this.vectors.push(new Vector(scaledIndex, temp.multiply(new Complex(1.0 / this.N, 0))));
         
         }
 
